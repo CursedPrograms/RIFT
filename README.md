@@ -22,6 +22,16 @@
 
 # RIFT
 
+## ⚙️ Compile
+### 🐧 Linux
+```bash
+g++ kinet_scanner.cpp -o kinet_scanner -lcurl
+```
+### 🪟 Windows (MinGW)
+```bash
+g++ kinet_scanner.cpp -o kinet_scanner.exe -lcurl
+```
+
 <br>
 <div align="center">
 © Cursed Entertainment 2026
