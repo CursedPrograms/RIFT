@@ -41,9 +41,21 @@ This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v
 ## Related Projects
 
 - [WHIP-Robot-v00](https://github.com/CursedPrograms/WHIP-Robot-v00)
+- [KIDA-Robot-v00](https://github.com/CursedPrograms/KIDA-Robot-v00)
 - [KIDA-Robot-v01](https://github.com/CursedPrograms/KIDA-Robot-v01)
 - [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
 - [ComCentre](https://github.com/CursedPrograms/ComCentre)
+
+sudo snap install android-studio --classic
+
+### Run main.py
+
+Using Python directly:
+
+```bash
+source venv/bin/activate
+python main.py
+```
 
 ## ⚙️ Compile
 ### 🐧 Linux
