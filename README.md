@@ -20,7 +20,22 @@
   </div>
   <br>
 
-# RIFT
+# RIFT: Real-time Intelligent Fleet Technology
+
+- One unified interface for all your robots.
+- Real-time control, monitoring, and fleet management.
+- Easy to deploy across multiple platforms without network restrictions.
+
+#### ESP32/Wi-Fi Network Communications:
+This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
+ as a central hub, while human devices like phones and PCs act as control interfaces. The [Friday](https://github.com/CursedPrograms/ComCentre) can also assist with verbal communication between users and robots.
+
+## Related Projects
+
+- [WHIP-Robot-v00](https://github.com/CursedPrograms/WHIP-Robot-v00)
+- [KIDA-Robot-v01](https://github.com/CursedPrograms/KIDA-Robot-v01)
+- [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
+- [ComCentre](https://github.com/CursedPrograms/ComCentre)
 
 ## ⚙️ Compile
 ### 🐧 Linux
