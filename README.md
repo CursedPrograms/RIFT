@@ -28,7 +28,11 @@
 - [KIDA-Robot-v00](https://github.com/CursedPrograms/KIDA-Robot-v00)
 - [KIDA-Robot-v01](https://github.com/CursedPrograms/KIDA-Robot-v01)
 - [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
-- [ComCentre](https://github.com/CursedPrograms/ComCentre)
+- [Friday/ComCentre](https://github.com/CursedPrograms/ComCentre)
+
+dependencies {
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+}
 
 RIFT: Real-time Intelligent Fleet Technology
 
