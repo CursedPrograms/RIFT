@@ -22,6 +22,14 @@
 
 # RIFT: Real-time Intelligent Fleet Technology
 
+## Related Projects
+
+- [WHIP-Robot-v00](https://github.com/CursedPrograms/WHIP-Robot-v00)
+- [KIDA-Robot-v00](https://github.com/CursedPrograms/KIDA-Robot-v00)
+- [KIDA-Robot-v01](https://github.com/CursedPrograms/KIDA-Robot-v01)
+- [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
+- [ComCentre](https://github.com/CursedPrograms/ComCentre)
+
 RIFT: Real-time Intelligent Fleet Technology
 
 - Unified Interface – Control all your robots from a single app.
@@ -38,23 +46,26 @@ This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v
 - PC & Mobile Apps: Android Studio, MinGW (Windows/Linux)
 - Operating Systems: Raspberry Pi OS, Ubuntu, Windows, Android
 
-## Related Projects
+## How to Run:
 
-- [WHIP-Robot-v00](https://github.com/CursedPrograms/WHIP-Robot-v00)
-- [KIDA-Robot-v00](https://github.com/CursedPrograms/KIDA-Robot-v00)
-- [KIDA-Robot-v01](https://github.com/CursedPrograms/KIDA-Robot-v01)
-- [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
-- [ComCentre](https://github.com/CursedPrograms/ComCentre)
-
-sudo snap install android-studio --classic
-
-### Run main.py
-
-Using Python directly:
+### Environment Setup/Install Dependencies
 
 ```bash
+sudo snap install android-studio --classic
+python3 -m venv venv
 source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+### Run main.py for terminal interactivity
+
+```bash
 python main.py
+```
+### Run app.py for flask web server
+
+```bash
+python app.py
 ```
 
 ## ⚙️ Compile
