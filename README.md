@@ -28,7 +28,7 @@
 - [KIDA-Robot-v00](https://github.com/CursedPrograms/KIDA-Robot-v00)
 - [KIDA-Robot-v01](https://github.com/CursedPrograms/KIDA-Robot-v01)
 - [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
-- [Friday/ComCentre](https://github.com/CursedPrograms/ComCentre)
+- [DREAM/ComCentre](https://github.com/CursedPrograms/DREAM)
 
 dependencies {
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
