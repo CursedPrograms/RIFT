@@ -22,6 +22,9 @@
 
 # RIFT: Real-time Intelligent Fleet Technology
 
+> [!IMPORTANT]
+> Unified Interface – Control all your robots from a single app.
+
 ## Related Projects
 
 - [WHIP-Robot-v00](https://github.com/CursedPrograms/WHIP-Robot-v00)
@@ -30,16 +33,20 @@
 - [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
 - [DREAM/ComCentre](https://github.com/CursedPrograms/DREAM)
 
-dependencies {
-    implementation 'org.nanohttpd:nanohttpd:2.3.1'
-}
+---
 
-RIFT: Real-time Intelligent Fleet Technology
+## 📖 Overview
 
-- Unified Interface – Control all your robots from a single app.
-- Real-time Monitoring – Track robot status, camera feeds, and sensors instantly.
-- Fleet Management – Deploy and manage multiple robots effortlessly.
-- Cross-Platform – Works on Linux, Windows, Android, and microcontroller platforms without network restrictions.
+<details>
+<summary><b>View Overview</b></summary>
+
+RIFT is the centralized command-and-control backbone of the Cursed Entertainment robotics ecosystem. Built with Python and Flask, it serves as a high-speed telemetry hub that bridges the gap between various hardware platforms—like WHIP, NORA, and KIDA—and the user interface. By utilizing a unified communication protocol, RIFT allows for seamless fleet management and synchronized multi-agent operations.
+
+Core Features
+- [x] Fleet Dashboard: Real-time monitoring and control of multiple robots from a single interface.
+- [x] Protocol Bridging: Seamlessly translates commands between PC, Android, and diverse microcontroller platforms.
+- [x] Autoconnect Hub: Logic-based routing for local and remote instances (localhost:5000 through 5006).
+- [x] Telemetry Visualization: Live data streaming from IMU (MPU6050) and Ultrasonic sensors across the fleet.
 
 #### ESP32/Wi-Fi Network Communications:
 This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
@@ -49,8 +56,12 @@ This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v
 - Microcontrollers: ESP32, Arduino IDE
 - PC & Mobile Apps: Android Studio, MinGW (Windows/Linux)
 - Operating Systems: Raspberry Pi OS, Ubuntu, Windows, Android
+</details>
 
 ## How to Run:
+
+<details>
+<summary><b>View How to Run</b></summary>
 
 ### Environment Setup/Install Dependencies
 
@@ -81,6 +92,8 @@ g++ kinet_scanner.cpp -o kinet_scanner -lcurl
 ```bash
 g++ kinet_scanner.cpp -o kinet_scanner.exe -lcurl
 ```
+
+</details>
 
 <br>
 <div align="center">
