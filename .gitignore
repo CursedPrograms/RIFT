@@ -131,3 +131,8 @@ InitTestScene*.unity*
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 /Unity App/RIFT/Temp
+*.cache
+/Unity App/RIFT/Packages/com.merry-yellow.code-assist
+Unity App/RIFT/Packages/packages-lock.json
+Unity App/RIFT/Packages/packages-lock.json
+Unity App/RIFT/Packages/packages-lock.json
