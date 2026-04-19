@@ -66,6 +66,15 @@ This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v
 - Operating Systems: Raspberry Pi OS, Ubuntu, Windows, Android
 </details>
 
+```bash
+RIFT: localhost:5000
+DREAM: localhost:5001
+NORA: localhost:5002
+KIDA-00: localhost:5003
+KIDA-01: localhost:5004
+WHIP: localhost:5005
+```
+
 ## How to Run:
 
 <details>
