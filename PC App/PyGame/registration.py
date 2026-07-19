@@ -29,7 +29,9 @@ def scan_ip(ip):
         url = f"http://{ip}:5000/robots"
         r = requests.get(url, timeout=0.5)
         if r.status_code == 200:
-            data = r.json()
+            # RIFT and NORA both serve {"authority": "...", "robots": [...]},
+            # not a bare array.
+            data = r.json().get("robots", [])
             return (ip, data)
     except:
         return None

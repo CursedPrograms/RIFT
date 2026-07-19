@@ -99,11 +99,15 @@ void register_member(const std::string &name, const std::string &ip,
     fleet[name] = FleetMember{ip, type, std::move(caps), std::chrono::steady_clock::now()};
 }
 
+// Matches NORA's fleet server response shape exactly (see NORA-Robot-v00's
+// scripts/esp32/esp32.ino, setupFleetServer()'s /robots handler) so callers
+// like registration.cpp and PC App/PyGame/registration.py can scan either
+// RIFT or NORA with the same parser instead of needing a shape per node.
 std::string robots_json() {
     std::lock_guard<std::mutex> lock(fleet_mtx);
     auto now = std::chrono::steady_clock::now();
     std::ostringstream out;
-    out << "[";
+    out << "{\"authority\":\"" << json_escape(THIS_NAME) << "\",\"robots\":[";
     bool first = true;
     for (auto it = fleet.begin(); it != fleet.end(); ) {
         if (now - it->second.last_seen > FLEET_TTL) {
@@ -123,7 +127,7 @@ std::string robots_json() {
         out << "]}";
         ++it;
     }
-    out << "]";
+    out << "]}";
     return out.str();
 }
 

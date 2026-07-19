@@ -49,7 +49,9 @@ void scan_ip(const std::string& ip) {
         try {
             auto data = json::parse(readBuffer);
 
-            for (auto& r : data) {
+            // Both RIFT (network-discovery.cpp) and NORA (esp32.ino) serve
+            // {"authority": "...", "robots": [...]} — not a bare array.
+            for (auto& r : data["robots"]) {
                 Robot robot;
                 robot.name = r["name"];
                 robot.ip = ip;

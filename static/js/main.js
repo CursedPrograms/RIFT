@@ -1,11 +1,46 @@
-const button = document.getElementById('actionBtn');
-const heading = document.getElementById('greeting');
+const robotsEl = document.getElementById('robots');
+const peersEl  = document.getElementById('peers');
 
-button.addEventListener('click', function() {
-    heading.innerText = "You clicked the button! 🎉";
-    heading.style.color = "#28a745";
-    
-    // Adding the random background color logic just because
-    const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
-    document.body.style.backgroundColor = randomColor;
-});
+function renderNodes(el, items, emptyText) {
+    if (!items.length) {
+        el.innerHTML = `<p class="empty">${emptyText}</p>`;
+        return;
+    }
+    el.innerHTML = items.map(item => `
+        <div class="node-box">
+            <span class="name">${item.name}</span>
+            <span class="meta">${item.meta}</span>
+        </div>
+    `).join('');
+}
+
+function refreshRobots() {
+    fetch('/robots')
+        .then(r => r.json())
+        .then(data => {
+            const items = (data.robots || []).map(r => ({
+                name: r.name,
+                meta: `${r.type} @ ${r.ip} — ${(r.capabilities || []).join(', ') || 'no capabilities'}`,
+            }));
+            renderNodes(robotsEl, items, 'No robots registered yet.');
+        })
+        .catch(() => {});
+}
+
+function refreshPeers() {
+    fetch('/peers')
+        .then(r => r.json())
+        .then(data => {
+            const items = Object.entries(data).map(([name, url]) => ({ name, meta: url }));
+            renderNodes(peersEl, items, 'No peers seen yet.');
+        })
+        .catch(() => {});
+}
+
+function refreshAll() {
+    refreshRobots();
+    refreshPeers();
+}
+
+refreshAll();
+setInterval(refreshAll, 3000);

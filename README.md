@@ -89,26 +89,30 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
-### Run main.py for terminal interactivity
+### Run app.py for the Flask fleet dashboard
 
-```bash
-python main.py
-```
-### Run app.py for flask web server
+Runs the fleet registry, mDNS discovery (including browsing for ComCentre),
+and the RIFT/NORA integration threads (fleet-authority heartbeat, internet
+share) all in one Python process — no compiling required.
 
 ```bash
 python app.py
 ```
 
-## ⚙️ Compile
+This is a full alternative to the native fleet server below: both speak the
+same `/robots` + `/register` protocol on port 5000, so run one or the other,
+not both, on a given machine.
+
+## ⚙️ Compile (native alternative)
 
 ### 🐧 Linux (`PC App/App`)
 
-`network-discovery.cpp` is RIFT's fleet-registry server: it publishes itself
-on the LAN via mDNS/Avahi (`_rift._tcp`), browses for other RIFT instances,
-and serves the `/robots` + `/register` endpoints that `registration.cpp`,
-`PC App/PyGame/registration.py`, and `Fleet/register.py` all talk to.
-`registration.cpp` is the subnet-scanning client that queries `/robots`.
+`network-discovery.cpp` is RIFT's native fleet-registry server: it publishes
+itself on the LAN via mDNS/Avahi (`_rift._tcp`), browses for other RIFT
+instances, and serves the `/robots` + `/register` endpoints that
+`registration.cpp`, `PC App/PyGame/registration.py`, and `Fleet/register.py`
+all talk to. `registration.cpp` is the subnet-scanning client that queries
+`/robots`.
 
 ```bash
 ./build.sh

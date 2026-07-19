@@ -3,16 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World</title>
+    <title>RIFT: Real-time Intelligent Fleet Technology</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
+    <h1>RIFT</h1>
+    <h2>Real-time Intelligent Fleet Technology</h2>
+    <p id="self">{{ this_name }} &middot; {{ my_ip }}:{{ this_port }}</p>
 
-    <div class="card">
-        <h1 id="greeting">Hello, World!</h1>
-        <p>Welcome to your Flask web project.</p>
-        <button id="actionBtn">Click Me</button>
-    </div>
+    <section>
+        <h3>Registered Fleet</h3>
+        <div id="robots" class="grid"><p class="empty">No robots registered yet.</p></div>
+    </section>
+
+    <section>
+        <h3>Zeroconf Peers</h3>
+        <div id="peers" class="grid"><p class="empty">No peers seen yet.</p></div>
+    </section>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
