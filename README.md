@@ -67,12 +67,13 @@ This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v
 </details>
 
 ```bash
-RIFT: localhost:5000
-DREAM: localhost:5001
-NORA: localhost:5002
-KIDA-00: localhost:5003
-KIDA-01: localhost:5004
-WHIP: localhost:5005
+RIFT: :5000
+DREAM: :5001
+NORA: :5002
+KIDA-00: :5003
+KIDA-01: :5004
+WHIP: :5005
+MILA: :5010
 ```
 
 ## How to Run:
