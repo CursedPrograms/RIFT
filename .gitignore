@@ -29,3 +29,10 @@ google-services.json
 # Android Profiling
 *.hprof
 /venv
+
+# C++ build output
+PC App/App/bin/
+*.o
+
+# Python bytecode cache
+__pycache__/

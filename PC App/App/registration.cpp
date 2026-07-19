@@ -4,6 +4,9 @@
 #include <thread>
 #include <mutex>
 
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 
@@ -67,9 +70,25 @@ void scan_ip(const std::string& ip) {
     curl_easy_cleanup(curl);
 }
 
-// 🔹 Get local subnet base (simple version)
+// 🔹 Get local subnet base from this machine's own IP (assumes a /24)
 std::string get_base_ip() {
-    return "192.168.1"; // change if needed
+    struct ifaddrs *ifap, *ifa;
+    std::string base = "192.168.1"; // fallback if no interface is found
+
+    if (getifaddrs(&ifap) == 0) {
+        for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+            if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
+                auto *sa = (struct sockaddr_in *) ifa->ifa_addr;
+                std::string ip = inet_ntoa(sa->sin_addr);
+                if (ip != "127.0.0.1") {
+                    base = ip.substr(0, ip.find_last_of('.'));
+                    break;
+                }
+            }
+        }
+        freeifaddrs(ifap);
+    }
+    return base;
 }
 
 int main() {

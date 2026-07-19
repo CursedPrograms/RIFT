@@ -73,13 +73,40 @@ python app.py
 ```
 
 ## ⚙️ Compile
-### 🐧 Linux
+
+### 🐧 Linux (`PC App/App`)
+
+`network-discovery.cpp` is RIFT's fleet-registry server: it publishes itself
+on the LAN via mDNS/Avahi (`_rift._tcp`), browses for other RIFT instances,
+and serves the `/robots` + `/register` endpoints that `registration.cpp`,
+`PC App/PyGame/registration.py`, and `Fleet/register.py` all talk to.
+`registration.cpp` is the subnet-scanning client that queries `/robots`.
+
 ```bash
-g++ kinet_scanner.cpp -o kinet_scanner -lcurl
+./build.sh
 ```
+
+This installs the required apt dev packages (`libcurl4-openssl-dev`,
+`libavahi-client-dev`, `nlohmann-json3-dev`, `libcpp-httplib-dev`) if
+missing — you'll be asked for your sudo password — then builds both
+binaries into `PC App/App/bin/`.
+
+To start the fleet server once built:
+
+```bash
+./run_server.sh
+```
+
+Or build manually with the Makefile:
+
+```bash
+cd "PC App/App"
+make
+```
+
 ### 🪟 Windows (MinGW)
 ```bash
-g++ kinet_scanner.cpp -o kinet_scanner.exe -lcurl
+g++ registration.cpp -o registration.exe -lcurl
 ```
 
 <br>
