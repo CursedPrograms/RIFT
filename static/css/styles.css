@@ -41,3 +41,20 @@ h3 {
 .node-box .meta { color: #888; font-size: 0.8rem; }
 
 .empty { color: #555; font-size: 0.85rem; font-style: italic; }
+
+.mode-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mode-row select,
+.mode-row input,
+.mode-row button {
+    background: #1e1e1e;
+    color: #eee;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    font-family: inherit;
+}
+.mode-row input { flex: 1; min-width: 160px; display: none; }
+.mode-row button { color: #0af; cursor: pointer; }
+.mode-row button:hover { background: #262626; }
+#modeStatus { color: #888; font-size: 0.8rem; }

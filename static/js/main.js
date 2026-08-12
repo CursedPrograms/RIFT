@@ -44,3 +44,46 @@ function refreshAll() {
 
 refreshAll();
 setInterval(refreshAll, 3000);
+
+// ── Connection Mode ──────────────────────────────────────────────────────
+
+const modeSelect  = document.getElementById('modeSelect');
+const btPortInput = document.getElementById('btPortInput');
+const modeApply   = document.getElementById('modeApply');
+const modeStatus  = document.getElementById('modeStatus');
+
+function syncBtPortVisibility() {
+    btPortInput.style.display = modeSelect.value === 'bluetooth' ? 'inline-block' : 'none';
+}
+
+function loadMode() {
+    fetch('/mode')
+        .then(r => r.json())
+        .then(data => {
+            modeSelect.value = data.mode || 'wifi';
+            if (data.bt_port) btPortInput.value = data.bt_port;
+            syncBtPortVisibility();
+        })
+        .catch(() => {});
+}
+
+modeSelect.addEventListener('change', syncBtPortVisibility);
+
+modeApply.addEventListener('click', () => {
+    const mode = modeSelect.value;
+    const bt_port = btPortInput.value.trim();
+    modeStatus.textContent = 'applying…';
+    fetch('/mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode, bt_port }),
+    })
+        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+        .then(({ ok, data }) => {
+            modeStatus.textContent = ok ? `mode: ${data.mode}` : (data.error || 'failed');
+        })
+        .catch(() => { modeStatus.textContent = 'network error'; });
+});
+
+syncBtPortVisibility();
+loadMode();

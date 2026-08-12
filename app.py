@@ -38,6 +38,15 @@ _fleet_lock = threading.Lock()
 _peers: dict[str, str] = {}
 _peers_lock = threading.Lock()
 
+# Connection Mode: which transport the fleet-authority heartbeat to NORA
+# uses. Default WiFi/HTTP, same as always; switching to Bluetooth restarts
+# the heartbeat thread over Fleet/bt_link.py instead (see Fleet/register.py).
+_mode_lock       = threading.Lock()
+_transport_mode  = "wifi"
+_bt_port         = None
+_fleet_thread    = None
+_fleet_stop      = None
+
 
 def _get_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -110,6 +119,51 @@ def index():
     return render_template("index.html", this_name=THIS_NAME, my_ip=MY_IP, this_port=THIS_PORT)
 
 
+# ── Connection Mode: WiFi (default) or Bluetooth heartbeat to NORA ─────────
+
+def _restart_fleet_authority(transport, bt_port=None):
+    """Stops the current heartbeat thread (if any) and starts a new one on
+    the given transport. Caller must hold _mode_lock."""
+    global _fleet_thread, _fleet_stop
+    if _fleet_stop is not None:
+        _fleet_stop.set()
+        _fleet_thread.join(timeout=2)
+    _fleet_thread, _fleet_stop = start_fleet_authority(
+        name=THIS_NAME,
+        capabilities=["fleet_management", "monitoring"],
+        transport=transport,
+        bt_port=bt_port,
+    )
+
+
+@app.route("/mode")
+def get_mode():
+    with _mode_lock:
+        return jsonify({"mode": _transport_mode, "bt_port": _bt_port})
+
+
+@app.route("/mode", methods=["POST"])
+def set_mode():
+    global _transport_mode, _bt_port
+    data = request.get_json(silent=True) or request.form
+    mode = (data.get("mode") or "").strip().lower()
+    if mode not in ("wifi", "bluetooth"):
+        return jsonify({"error": "mode must be 'wifi' or 'bluetooth'"}), 400
+
+    bt_port = (data.get("bt_port") or "").strip() or None
+    if mode == "bluetooth" and not bt_port:
+        return jsonify({"error": "bt_port is required for Bluetooth mode"}), 400
+
+    with _mode_lock:
+        try:
+            _restart_fleet_authority(mode, bt_port)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+        _transport_mode = mode
+        _bt_port = bt_port
+        return jsonify({"mode": _transport_mode, "bt_port": _bt_port})
+
+
 # ── Zeroconf: publish self, watch for RIFT and ComCentre peers ─────────────
 
 class _PeerListener:
@@ -155,8 +209,9 @@ if __name__ == "__main__":
     print(f"[RIFT] Zeroconf registered as {THIS_NAME}; "
           f"watching {RIFT_ZEROCONF_TYPE} and {COMCENTRE_ZEROCONF_TYPE}")
 
-    start_fleet_authority(name=THIS_NAME, capabilities=["fleet_management", "monitoring"])
-    print("[RIFT] Announcing to NORA as fleet authority")
+    with _mode_lock:
+        _restart_fleet_authority(_transport_mode)
+    print(f"[RIFT] Announcing to NORA as fleet authority (mode: {_transport_mode})")
 
     start_internet_share()
     print("[RIFT] Internet-share to NORA's AP started")

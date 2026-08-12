@@ -11,6 +11,19 @@
     <h2>Real-time Intelligent Fleet Technology</h2>
     <p id="self">{{ this_name }} &middot; {{ my_ip }}:{{ this_port }}</p>
 
+    <section id="connMode">
+        <h3>Connection Mode</h3>
+        <div class="mode-row">
+            <select id="modeSelect">
+                <option value="wifi">WiFi</option>
+                <option value="bluetooth">Bluetooth</option>
+            </select>
+            <input type="text" id="btPortInput" placeholder="BT port, e.g. COM5 or /dev/rfcomm0">
+            <button id="modeApply">Apply</button>
+            <span id="modeStatus"></span>
+        </div>
+    </section>
+
     <section>
         <h3>Registered Fleet</h3>
         <div id="robots" class="grid"><p class="empty">No robots registered yet.</p></div>

@@ -10,6 +10,11 @@ self-authoring it: while RIFT keeps heartbeating here, NORA defers her
 `/robots` response to point at RIFT. If RIFT stops calling this (closed,
 crashed, network dropped), the registration simply expires on NORA's side
 and she reclaims the role automatically — no explicit handoff required.
+
+The heartbeat can go over HTTP/WiFi (default) or over a Bluetooth serial
+link to NORA (see bt_link.py) when the dashboard's Connection Mode is
+switched to Bluetooth — same wire-level idea, NORA just takes it over her
+'H' Bluetooth command instead of her /register HTTP route.
 """
 
 import threading
@@ -22,7 +27,7 @@ NORA_PORT = 5000            # NORA's fleet-registry port
 HEARTBEAT_SECS = 10         # must be well under NORA's FLEET_TTL_MS (20s) or the authority will flap
 
 
-def _announce(host, port, name, capabilities):
+def _announce_wifi(host, port, name, capabilities):
     try:
         requests.post(
             f"http://{host}:{port}/register",
@@ -40,26 +45,58 @@ def _announce(host, port, name, capabilities):
 
 def start_fleet_authority(name="RIFT", capabilities=None,
                            host=NORA_HOST, port=NORA_PORT,
-                           interval=HEARTBEAT_SECS):
+                           interval=HEARTBEAT_SECS,
+                           transport="wifi", bt_port=None):
     """
     Start a background heartbeat thread that repeatedly registers this
     RIFT instance with NORA as the fleet authority. Safe to call even if
     NORA isn't reachable yet (e.g. still booting, or not connected to her
-    WiFi AP) — it just keeps retrying on the same interval.
+    WiFi AP/not paired over Bluetooth) — it just keeps retrying on the
+    same interval.
 
-    Returns the daemon thread so callers can join() it if they want to,
-    though that's rarely necessary since it never returns on its own.
+    transport: "wifi" (default) heartbeats over HTTP, same as always.
+    "bluetooth" heartbeats over a Bluetooth serial link to NORA instead
+    (bt_port is required in that case — e.g. "COM5" on Windows or
+    "/dev/rfcomm0" on Linux, bound to a pairing with "NORA").
+
+    Returns (thread, stop_event). Call stop_event.set() to retire the
+    heartbeat cleanly (e.g. before switching transport) — the thread
+    notices within one heartbeat interval and exits on its own.
     """
     capabilities = capabilities or ["fleet_management", "monitoring"]
+    if transport == "bluetooth" and not bt_port:
+        raise ValueError("bt_port is required when transport='bluetooth'")
+
+    stop_event = threading.Event()
 
     def _loop():
-        while True:
-            _announce(host, port, name, capabilities)
-            time.sleep(interval)
+        bt_link = None
+
+        def _bt_link():
+            nonlocal bt_link
+            if bt_link is None:
+                from Fleet.bt_link import BtFleetLink
+                bt_link = BtFleetLink(bt_port)
+            return bt_link
+
+        while not stop_event.is_set():
+            if transport == "bluetooth":
+                try:
+                    _bt_link().register(name, capabilities)
+                except Exception:
+                    if bt_link is not None:
+                        bt_link.close()
+                        bt_link = None
+            else:
+                _announce_wifi(host, port, name, capabilities)
+            stop_event.wait(interval)
+
+        if bt_link is not None:
+            bt_link.close()
 
     t = threading.Thread(target=_loop, daemon=True, name="nora-fleet-authority")
     t.start()
-    return t
+    return t, stop_event
 
 
 if __name__ == "__main__":
