@@ -40,6 +40,7 @@
 - [KIDA-Robot-v01](https://github.com/CursedPrograms/KIDA-Robot-v01)
 - [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
 - [DREAM/ComCentre](https://github.com/CursedPrograms/DREAM)
+- [ARM-Robot-v01](https://github.com/CursedPrograms/ARM-Robot-v01)
 
 ---
 
@@ -74,6 +75,7 @@ KIDA-00: :5003
 KIDA-01: :5004
 WHIP: :5005
 MILA: :5010
+ARM: :5011
 ```
 
 ## How to Run:
