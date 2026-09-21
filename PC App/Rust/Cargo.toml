@@ -1,0 +1,22 @@
+[package]
+name = "rift"
+version = "0.1.0"
+edition = "2021"
+description = "RIFT fleet hub, Rust edition: registry, dashboard, mDNS, NORA heartbeat, internet share"
+
+[[bin]]
+name = "rift-rust"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = "1"
+tiny_http = "0.12"
+# Heartbeat to NORA / --scan client: plain http:// only, so no TLS.
+ureq = { version = "2", default-features = false }
+# Bluetooth-serial heartbeat; no libudev needed to build on Linux.
+serialport = { version = "4", default-features = false }
+mdns-sd = "0.13"
+ctrlc = { version = "3", features = ["termination"] }
+
+[profile.release]
+opt-level = 2

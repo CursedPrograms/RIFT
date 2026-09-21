@@ -36,3 +36,9 @@ PC App/App/bin/
 
 # Python bytecode cache
 __pycache__/
+
+# Alternative fleet-hub build output (Rust / F# / Julia editions)
+PC App/Rust/target/
+PC App/FSharp/bin/
+PC App/FSharp/obj/
+PC App/Julia/Manifest.toml

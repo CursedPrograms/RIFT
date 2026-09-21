@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>rift-fsharp</AssemblyName>
+    <RootNamespace>Rift</RootNamespace>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- FS3511: task{} state machines that fall back to the dynamic implementation - a perf note only. -->
+    <NoWarn>$(NoWarn);FS3511</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Config.fs" />
+    <Compile Include="Registry.fs" />
+    <Compile Include="Authority.fs" />
+    <Compile Include="Mdns.fs" />
+    <Compile Include="Share.fs" />
+    <Compile Include="Scan.fs" />
+    <Compile Include="Server.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Kestrel: binds 0.0.0.0 without admin rights on Windows, unlike HttpListener. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <!-- mDNS publish + browse. -->
+    <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
+    <!-- Bluetooth-serial heartbeat. -->
+    <PackageReference Include="System.IO.Ports" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

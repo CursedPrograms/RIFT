@@ -12,6 +12,10 @@
   <img alt="C++" src="https://img.shields.io/badge/c++%20-%23323330.svg?&style=for-the-badge&logo=c%2B%2B&logoColor=white"/>
   <img alt="C#" src="https://img.shields.io/badge/c%23%20-%23323330.svg?&style=for-the-badge&logo=c-sharp&logoColor=white"/>
   <img alt="Kotlin" src="https://img.shields.io/badge/kotlin-%23323330.svg?&style=for-the-badge&logo=kotlin&logoColor=white"/>
+  <img alt="F#" src="https://img.shields.io/badge/f%23-%23323330.svg?&style=for-the-badge&logo=fsharp&logoColor=white"/>
+  <img alt="Go" src="https://img.shields.io/badge/go-%23323330.svg?&style=for-the-badge&logo=go&logoColor=white"/>
+  <img alt="Rust" src="https://img.shields.io/badge/rust-%23323330.svg?&style=for-the-badge&logo=rust&logoColor=white"/>
+  <img alt="Julia" src="https://img.shields.io/badge/julia-%23323330.svg?&style=for-the-badge&logo=julia&logoColor=white"/>
 </div>
 
 <div align="center">
@@ -145,6 +149,40 @@ g++ registration.cpp -o registration.exe -lcurl
 ```
 
 </details>
+
+## 🧩 Fleet hub in other languages (Windows + Linux)
+
+`app.py` is the reference fleet hub. `PC App/Go`, `PC App/Rust`, `PC App/FSharp` (.NET 8) and `PC App/Julia` are complete, cross-platform re-implementations of it - the same protocol on the same port `5000`, so run **one** hub per machine, whichever language you prefer. Each one has:
+
+- the fleet registry: `POST /register` (form body, or the JSON that `Android App/Registration.kt` sends), `GET /robots` (entries expire after 20 s without a heartbeat), `GET /ping`
+- `GET /peers`, plus mDNS publish/browse of `_rift._tcp` and ComCentre's `_flask-link._tcp`, so hubs (and DREAM) find each other
+- `GET`/`POST /mode`: the WiFi/Bluetooth connection mode, and the NORA fleet-authority heartbeat that goes with it (HTTP to `192.168.4.1:5000`, or `H<name>:<caps>` over a Bluetooth serial port)
+- the same dashboard: `templates/index.html` and `static/` are served as they are, no template engine needed
+- the NetworkManager internet share for NORA's AP (Linux only, like `Fleet/internet_share.py`)
+- `--scan`, the subnet scanner (what `registration.cpp` / `registration.py` do): finds every hub or robot answering `/robots` on this machine's /24
+
+| Language | Launch | Needs |
+| --- | --- | --- |
+| Go | `run_server_go.bat` / `./run_server_go.sh` | [Go](https://go.dev/dl/) |
+| Rust | `run_server_rust.bat` / `./run_server_rust.sh` | [Rust](https://rustup.rs/) |
+| F# | `run_server_fsharp.bat` / `./run_server_fsharp.sh` | [.NET 8 SDK](https://dotnet.microsoft.com/download) |
+| Julia | `run_server_julia.bat` / `./run_server_julia.sh` | [Julia](https://julialang.org/downloads/) (installs its packages on first run) |
+
+```bash
+./run_server_go.sh                       # start the hub on :5000
+./run_server_rust.sh --scan              # scan this subnet for hubs/robots
+./run_server_fsharp.sh --name RIFT2 --port 5010 --no-internet-share   # a second hub for testing
+```
+
+Options (all four): `--name`, `--port`, `--nora-host`, `--nora-port`, `--heartbeat-secs`, `--ttl-secs`, `--no-heartbeat`, `--no-mdns`, `--no-internet-share`, `--root`, `--scan`. On Linux, Bluetooth mode needs the serial port bound to the NORA pairing (e.g. `sudo rfcomm bind 0 <NORA_MAC>` → `/dev/rfcomm0`), and the internet share needs NetworkManager (`nmcli`); like `app.py`, the hub tries to join NORA's AP whenever it starts unless `--no-internet-share` is given.
+
+All four were checked against the same protocol test suite and against each other and the original `app.py`: each hub lists the others (and `app.py`) as mDNS peers, and every robot heartbeat - including ARM's real controllers - lands in `/robots`.
+
+### Still incomplete
+
+- `PC App/App` (C++): Linux-only (Avahi), and missing `/peers`, `/mode`, the dashboard and the NORA heartbeat.
+- `Unity App/`: a placeholder `HttpListener` that only answers "Hello from Unity".
+- `Android App/`: `NetworkDiscovery.kt` only serves `/ping` and a static page; `Registration.kt` posts JSON (which all four hubs above accept, but `app.py` and the C++ hub don't).
 
 <br>
 <div align="center">
