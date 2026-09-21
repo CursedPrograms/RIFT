@@ -63,7 +63,7 @@ Core Features
 
 #### ESP32/Wi-Fi Network Communications:
 This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
- as a central hub, while human devices like phones and PCs act as control interfaces. [Friday](https://github.com/CursedPrograms/ComCentre) can also assist with verbal communication between users and robots.
+ as a central hub, while human devices like phones and PCs act as control interfaces. [DREAM/ComCentre](https://github.com/CursedPrograms/DREAM) can also assist with verbal communication between users and robots.
 
 #### Supported Development & Runtime Environments
 - Microcontrollers: ESP32, Arduino IDE
