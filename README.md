@@ -53,7 +53,7 @@
 <details>
 <summary><b>View Overview</b></summary>
 
-RIFT is the centralized command-and-control backbone of the Cursed Entertainment robotics ecosystem. Built with Python and Flask, it serves as a high-speed telemetry hub that bridges the gap between various hardware platforms—like WHIP, NORA, and KIDA—and the user interface. By utilizing a unified communication protocol, RIFT allows for seamless fleet management and synchronized multi-agent operations.
+RIFT is the centralized command-and-control backbone of the DREAM robotics ecosystem. Built with Python and Flask, it serves as a high-speed telemetry hub that bridges the gap between various hardware platforms—like WHIP, NORA, and KIDA—and the user interface. By utilizing a unified communication protocol, RIFT allows for seamless fleet management and synchronized multi-agent operations.
 
 Core Features
 - [x] Fleet Dashboard: Real-time monitoring and control of multiple robots from a single interface.
