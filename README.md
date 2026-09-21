@@ -35,9 +35,11 @@
 
 ---
 
-# RIFT: Real-time Intelligent Fleet Technology
+# RIFT
+## Real-time Intelligent Fleet Technology
+### A DREAM Robotics System
 
-## Related Projects
+## Related Projects (DREAM Robotics Ecosystem)
 
 - [WHIP-Robot-v00](https://github.com/CursedPrograms/WHIP-Robot-v00)
 - [KIDA-Robot-v00](https://github.com/CursedPrograms/KIDA-Robot-v00)
