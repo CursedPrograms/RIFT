@@ -1,24 +1,33 @@
-CXX := g++
+CXX ?= g++
 CXXFLAGS := -std=c++17 -Wall -O2 -Ithird_party
 BINDIR := bin
 
-AVAHI_CFLAGS := $(shell pkg-config --cflags avahi-client 2>/dev/null)
-AVAHI_LIBS   := $(shell pkg-config --libs avahi-client 2>/dev/null)
-CURL_CFLAGS  := $(shell pkg-config --cflags libcurl 2>/dev/null)
-CURL_LIBS    := $(shell pkg-config --libs libcurl 2>/dev/null)
+# No Avahi/curl/nlohmann needed: mDNS and HTTP are built in (see rift_hub.h), so
+# the same sources build on Linux and on Windows (MinGW-w64).
+ifeq ($(OS),Windows_NT)
+    EXE := .exe
+    LDFLAGS := -static
+    LDLIBS := -lws2_32 -liphlpapi -lpthread
+else
+    EXE :=
+    LDFLAGS :=
+    LDLIBS := -lpthread
+endif
+
+HEADERS := rift_util.h rift_hub.h rift_scan.h third_party/httplib.h third_party/minijson.hpp
 
 .PHONY: all clean
 
-all: $(BINDIR)/network-discovery $(BINDIR)/registration
+all: $(BINDIR)/network-discovery$(EXE) $(BINDIR)/registration$(EXE)
 
 $(BINDIR):
 	mkdir -p $(BINDIR)
 
-$(BINDIR)/network-discovery: network-discovery.cpp | $(BINDIR)
-	$(CXX) $(CXXFLAGS) $(AVAHI_CFLAGS) -o $@ $< $(AVAHI_LIBS) -lpthread
+$(BINDIR)/network-discovery$(EXE): network-discovery.cpp $(HEADERS) | $(BINDIR)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $< $(LDLIBS)
 
-$(BINDIR)/registration: registration.cpp | $(BINDIR)
-	$(CXX) $(CXXFLAGS) $(CURL_CFLAGS) -o $@ $< $(CURL_LIBS) -lpthread
+$(BINDIR)/registration$(EXE): registration.cpp $(HEADERS) | $(BINDIR)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $< $(LDLIBS)
 
 clean:
 	rm -rf $(BINDIR)

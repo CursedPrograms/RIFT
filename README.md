@@ -180,11 +180,17 @@ Options (all four): `--name`, `--port`, `--nora-host`, `--nora-port`, `--heartbe
 
 All four were checked against the same protocol test suite and against each other and the original `app.py`: each hub lists the others (and `app.py`) as mDNS peers, and every robot heartbeat - including ARM's real controllers - lands in `/robots`.
 
-### Still incomplete
+### C++, Unity and Android hubs
 
-- `PC App/App` (C++): Linux-only (Avahi), and missing `/peers`, `/mode`, the dashboard and the NORA heartbeat.
-- `Unity App/`: a placeholder `HttpListener` that only answers "Hello from Unity".
-- `Android App/`: `NetworkDiscovery.kt` only serves `/ping` and a static page; `Registration.kt` posts JSON (which all four hubs above accept, but `app.py` and the C++ hub don't).
+The same protocol (`/ping`, `/register`, `/robots`, `/peers`, `/mode`, dashboard, `/static`, NORA heartbeat) is also implemented in:
+
+- **`PC App/App` (C++)** - Windows + Linux, no Avahi/curl/nlohmann needed. Build with `build.sh` / `build.bat` (Windows links statically so the exe runs from any shell).
+- **`Unity App/RIFT/Assets/Rift`** - a hub that starts automatically on scene load (`Assets/main.cs` exposes name/port/NORA settings and an on-screen panel). Bluetooth mode needs the project's *Api Compatibility Level* set to *.NET Framework*.
+- **`Android App/`** - Kotlin. `RiftCore.kt`, `RiftMdns.kt`, `RiftAuthority.kt` and `NetworkDiscovery.kt` are plain JVM (NanoHTTPD + `org.json`); `RiftAndroid.kt` adds the foreground service, activity and Bluetooth link. To use: add `org.nanohttpd:nanohttpd:2.3.1` to Gradle, copy `templates/index.html` to `app/src/main/assets/templates/` and `static/` to `app/src/main/assets/static/`, and declare the permissions/activity/service listed at the top of `RiftAndroid.kt`. In Bluetooth mode `bt_port` is NORA's paired MAC address.
+
+`Registration.kt` posts JSON, which every hub above accepts (only the original `app.py` is form-only).
+
+Verified: the C++, Unity (C# on a desktop runtime with Unity stubs) and Android (core on a JVM) hubs pass the same 32-check protocol suite and interoperate over mDNS/heartbeat with the Go/Rust/F#/Julia hubs. Not run on real hardware: Linux-only code paths, Bluetooth, internet sharing, and the Android service/activity (`RiftAndroid.kt` was only compile-checked against an old android.jar, which lacks the API 26 calls).
 
 <br>
 <div align="center">

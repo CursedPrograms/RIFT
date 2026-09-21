@@ -42,3 +42,12 @@ PC App/Rust/target/
 PC App/FSharp/bin/
 PC App/FSharp/obj/
 PC App/Julia/Manifest.toml
+
+# Unity generated folders
+Unity App/RIFT/Library/
+Unity App/RIFT/Temp/
+Unity App/RIFT/Logs/
+Unity App/RIFT/obj/
+Unity App/RIFT/Builds/
+Unity App/RIFT/*.csproj
+Unity App/RIFT/*.sln
