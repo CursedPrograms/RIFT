@@ -41,11 +41,12 @@
 
 ## Related Projects (DREAM Robotics Ecosystem)
 
-- [WHIP-Robot-v00](https://github.com/CursedPrograms/WHIP-Robot-v00)
 - [KIDA-Robot-v00](https://github.com/CursedPrograms/KIDA-Robot-v00)
 - [KIDA-Robot-v01](https://github.com/CursedPrograms/KIDA-Robot-v01)
+- [MILA-Robot-v00](https://github.com/CursedPrograms/MILA-Robot-v00)
 - [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
-- [DREAM/ComCentre](https://github.com/CursedPrograms/DREAM)
+- [WHIP-Robot-v00](https://github.com/CursedPrograms/WHIP-Robot-v00)
+- [DREAM](https://github.com/CursedPrograms/DREAM)
 - [ARM-Robot-v01](https://github.com/CursedPrograms/ARM-Robot-v01)
 
 ---
@@ -202,5 +203,11 @@ Verified: the C++, Unity (C# on a desktop runtime with Unity stubs) and Android 
     <img src="https://github.com/CursedPrograms/cursedentertainment/raw/main/images/logos/logo-wide-grey.png"
         alt="CursedEntertainment Logo" style="width:250px;">
 </a>
+</div>
+<br>
+<div align="center">
+  <a href="https://github.com/SynthWomb" target="_blank">
+    <img src="https://github.com/SynthWomb/synth.womb/blob/main/logos/synthwomb07.png" alt="SynthWomb" style="width:200px;"/>
+  </a>
 </div>
  
