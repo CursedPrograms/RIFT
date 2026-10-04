@@ -4,6 +4,8 @@ import socket
 from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser
 import ollama  # Make sure this is installed!
 
+import colour_scheme
+
 app = Flask(__name__)
 
 # --- CONFIG ---
@@ -52,22 +54,23 @@ def index():
             <head>
                 <title>{THIS_NAME} Chat</title>
                 <style>
-                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-                    header { background: #1f1f1f; padding: 15px; text-align: center; border-bottom: 1px solid #333; }
+                    {{ scheme_css|safe }}
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--background); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; }
+                    header { background: var(--panel); padding: 15px; text-align: center; border-bottom: 1px solid var(--border); color: var(--accent); }
                     #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
                     
                     /* Chat Bubbles */
                     .msg { max-width: 70%; padding: 10px 15px; border-radius: 15px; font-size: 0.95em; line-height: 1.4; position: relative; }
-                    .msg.user { align-self: flex-end; background: #007bff; color: white; border-bottom-right-radius: 2px; }
-                    .msg.ai { align-self: flex-start; background: #333; color: #e0e0e0; border-bottom-left-radius: 2px; }
+                    .msg.user { align-self: flex-end; background: var(--accent); color: var(--background); border-bottom-right-radius: 2px; }
+                    .msg.ai { align-self: flex-start; background: var(--panel); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 2px; }
                     
-                    .sender-name { font-size: 0.75em; font-weight: bold; margin-bottom: 4px; display: block; color: #aaa; }
+                    .sender-name { font-size: 0.75em; font-weight: bold; margin-bottom: 4px; display: block; color: var(--text-sec); }
                     
                     /* Input Area */
-                    footer { padding: 20px; background: #1f1f1f; display: flex; gap: 10px; }
-                    input { flex: 1; padding: 12px; border-radius: 25px; border: none; background: #333; color: white; outline: none; }
-                    button { padding: 0 20px; border-radius: 25px; border: none; background: #007bff; color: white; font-weight: bold; cursor: pointer; }
-                    button:hover { background: #0056b3; }
+                    footer { padding: 20px; background: var(--panel); display: flex; gap: 10px; }
+                    input { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid var(--border); background: var(--background); color: var(--text); outline: none; }
+                    button { padding: 0 20px; border-radius: 25px; border: none; background: var(--accent); color: var(--background); font-weight: bold; cursor: pointer; }
+                    button:hover { background: var(--accent-hover); }
                 </style>
                 <script>
                     let lastCount = 0;
@@ -119,7 +122,7 @@ def index():
                 </footer>
             </body>
         </html>
-    """.replace("{THIS_NAME}", THIS_NAME))
+    """.replace("{THIS_NAME}", THIS_NAME), scheme_css=colour_scheme.css_root())
 
 @app.route("/get_messages")
 def get_messages():

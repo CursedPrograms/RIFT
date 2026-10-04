@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Colour scheme for every RIFT UI: the fleet dashboard (templates/index.html +
+  static/css/styles.css, served by every hub), the PyGame scanner
+  (PC App/PyGame/registration.py), the Python test apps, the Unity hub's
+  on-screen panel, and the GitHub Pages site (index.html).
+
+  Edit a value and restart - no code changes needed. app.py serves this file to
+  the dashboard as /colour_scheme.css; the other hubs serve static/ unchanged,
+  so styles.css carries these same values as its built-in defaults.
+  A missing or unreadable file/role falls back to the built-in default for that colour.
+
+  Format: one colour per line, written exactly as  name="..." value="#RRGGBB".
+  In the CSS each role is a variable with the same name, "_" written as "-".
+-->
+<colour_scheme>
+  <!-- Surfaces -->
+  <colour name="background"       value="#0A0B07"/>  <!-- window / page background -->
+  <colour name="panel"            value="#14160F"/>  <!-- robot / peer rows, inputs, buttons -->
+  <colour name="border"           value="#2A2E1F"/>  <!-- row edges, outlines, section rules -->
+  <colour name="divider"          value="#1E2117"/>  <!-- lines between rows -->
+
+  <!-- Text -->
+  <colour name="text"             value="#F1F5E6"/>  <!-- primary text -->
+  <colour name="text_sec"         value="#9DA38C"/>  <!-- secondary text, metadata -->
+  <colour name="text_dim"         value="#5E6352"/>  <!-- hints, empty-list notes -->
+
+  <!-- Accents -->
+  <colour name="accent"           value="#A3E635"/>  <!-- RIFT yellow: title, robot names, buttons -->
+  <colour name="accent_hover"     value="#BEF264"/>  <!-- lighter yellow: hover, live values -->
+  <colour name="accent2"          value="#84CC16"/>  <!-- deeper yellow-green: highlights -->
+  <colour name="accent3"          value="#D9F99D"/>  <!-- pale yellow: soft highlights -->
+
+  <!-- Buttons -->
+  <colour name="button_hover_bg"  value="#1C2112"/>  <!-- button fill when hovered -->
+  <colour name="danger_bg"        value="#210F0D"/>  <!-- destructive button fill -->
+
+  <!-- Signal colours -->
+  <colour name="online"           value="#A3E635"/>  <!-- online dot -->
+  <colour name="offline"          value="#E24B4A"/>  <!-- offline / errors -->
+</colour_scheme>

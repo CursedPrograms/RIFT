@@ -1,8 +1,24 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+:root {
+    /* Built-in defaults: the same values as colour_scheme.xml. app.py also
+       serves that file as /colour_scheme.css (linked after this one), so on
+       the Python hub an XML edit wins; the other hubs serve static/ as-is
+       and use these. */
+    --background: #0A0B07;
+    --panel: #14160F;
+    --border: #2A2E1F;
+    --text: #F1F5E6;
+    --text-sec: #9DA38C;
+    --text-dim: #5E6352;
+    --accent: #A3E635;
+    --accent-hover: #BEF264;
+    --button-hover-bg: #1C2112;
+}
+
 body {
-    background: #111;
-    color: #eee;
+    background: var(--background);
+    color: var(--text);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     flex-direction: column;
@@ -12,15 +28,15 @@ body {
     gap: 20px;
 }
 
-h1 { font-size: 1.8rem; letter-spacing: 3px; color: #0af; }
-h2 { font-size: 0.95rem; color: #888; font-weight: normal; }
-#self { font-size: 0.8rem; color: #555; }
+h1 { font-size: 1.8rem; letter-spacing: 3px; color: var(--accent); }
+h2 { font-size: 0.95rem; color: var(--text-sec); font-weight: normal; }
+#self { font-size: 0.8rem; color: var(--text-dim); }
 
 section { width: 100%; max-width: 700px; }
 h3 {
     font-size: 1rem;
-    color: #0af;
-    border-bottom: 1px solid #333;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
     padding-bottom: 6px;
     margin-bottom: 12px;
 }
@@ -28,8 +44,8 @@ h3 {
 .grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
 
 .node-box {
-    background: #1e1e1e;
-    border: 1px solid #333;
+    background: var(--panel);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 10px 14px;
     display: flex;
@@ -37,24 +53,24 @@ h3 {
     align-items: center;
     font-size: 0.9rem;
 }
-.node-box .name { color: #0af; font-weight: bold; }
-.node-box .meta { color: #888; font-size: 0.8rem; }
+.node-box .name { color: var(--accent); font-weight: bold; }
+.node-box .meta { color: var(--text-sec); font-size: 0.8rem; }
 
-.empty { color: #555; font-size: 0.85rem; font-style: italic; }
+.empty { color: var(--text-dim); font-size: 0.85rem; font-style: italic; }
 
 .mode-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .mode-row select,
 .mode-row input,
 .mode-row button {
-    background: #1e1e1e;
-    color: #eee;
-    border: 1px solid #333;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 8px 10px;
     font-size: 0.85rem;
     font-family: inherit;
 }
 .mode-row input { flex: 1; min-width: 160px; display: none; }
-.mode-row button { color: #0af; cursor: pointer; }
-.mode-row button:hover { background: #262626; }
-#modeStatus { color: #888; font-size: 0.8rem; }
+.mode-row button { color: var(--accent); cursor: pointer; }
+.mode-row button:hover { background: var(--button-hover-bg); color: var(--accent-hover); border-color: var(--accent); }
+#modeStatus { color: var(--text-sec); font-size: 0.8rem; }

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RIFT — Real-time Intelligent Fleet Technology</title>
+<meta name="description" content="RIFT is the fleet hub of the DREAM Robotics ecosystem: a robot registry, mDNS discovery and dashboard, in Python and re-implemented in Go, Rust, F#, Julia, C++, Unity and Android.">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="RIFT — Real-time Intelligent Fleet Technology">
+<meta property="og:description" content="The fleet command-and-control hub of the DREAM Robotics ecosystem.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="images/rift_avatar.jpg">
+<link rel="icon" href="site/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="site/apple-touch-icon.png">
+<link rel="stylesheet" href="site/style.css">
+<script src="site/site.js" defer></script>
+</head>
+<body>
+
+<nav aria-label="Primary">
+  <div class="wrap">
+    <a class="brand" href="#top">RIFT</a>
+    <ul>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#fleet">Fleet</a></li>
+      <li><a href="#run">Run</a></li>
+      <li><a href="#hubs">Hubs</a></li>
+      <li><a href="#screens">Screens</a></li>
+      <li><a href="https://github.com/CursedPrograms/RIFT">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="eyebrow">A DREAM Robotics System</div>
+    <h1>RIFT</h1>
+    <p class="tagline">Real-time Intelligent Fleet Technology</p>
+    <p class="lede">The command-and-control backbone of the DREAM robotics fleet. One hub registers every robot, finds its peers over mDNS and serves a live dashboard, so WHIP, NORA, KIDA and the rest can be watched and driven from one place.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/CursedPrograms/RIFT">View on GitHub</a>
+      <a class="btn" href="#run">Run a hub</a>
+      <a class="btn" href="https://ko-fi.com/cursedentertainment">Support on Ko-fi</a>
+    </div>
+    <div class="tags" aria-label="Technologies">
+      <span class="tag">Python</span>
+      <span class="tag">C++</span>
+      <span class="tag">C#</span>
+      <span class="tag">Kotlin</span>
+      <span class="tag">F#</span>
+      <span class="tag">Go</span>
+      <span class="tag">Rust</span>
+      <span class="tag">Julia</span>
+      <span class="tag">MIT License</span>
+    </div>
+    <figure class="avatar">
+      <img src="images/rift_avatar.jpg" alt="RIFT's avatar: a human representation of the robot" width="768" height="768">
+      <figcaption>RIFT &middot; avatar</figcaption>
+    </figure>
+  </div>
+</header>
+
+<main>
+
+<section id="overview">
+  <div class="wrap">
+    <h2>Overview</h2>
+    <h3 class="title">One hub for the whole fleet</h3>
+    <div class="grid cols-3">
+      <div class="card">
+        <span class="k">Monitor</span>
+        <h4>Fleet dashboard</h4>
+        <p>Real-time monitoring and control of every robot from a single interface.</p>
+      </div>
+      <div class="card">
+        <span class="k">Bridge</span>
+        <h4>Protocol bridging</h4>
+        <p>Translates commands between PC, Android and the robots' microcontrollers.</p>
+      </div>
+      <div class="card">
+        <span class="k">Discover</span>
+        <h4>Autoconnect</h4>
+        <p>mDNS publishing and browsing (<code>_rift._tcp</code>), so hubs, robots and DREAM find each other.</p>
+      </div>
+      <div class="card">
+        <span class="k">Stream</span>
+        <h4>Telemetry</h4>
+        <p>Live data from the fleet's IMU and ultrasonic sensors.</p>
+      </div>
+      <div class="card">
+        <span class="k">Network</span>
+        <h4>NORA as the hub</h4>
+        <p>Robots and controllers join <a href="https://github.com/CursedPrograms/NORA-Robot-v00">NORA</a>'s access point; RIFT keeps her fleet-authority heartbeat going.</p>
+      </div>
+      <div class="card">
+        <span class="k">Any language</span>
+        <h4>Eight implementations</h4>
+        <p>Python, Go, Rust, F#, Julia, C++, Unity and Android hubs all speak the same protocol.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="fleet">
+  <div class="wrap">
+    <h2>Fleet</h2>
+    <h3 class="title">Who lives where</h3>
+    <p class="muted">Every member of the ecosystem has its own port:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Member</th><th>Port</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td>RIFT</td><td class="mono">5000</td><td>This fleet hub</td></tr>
+          <tr><td>DREAM</td><td class="mono">5001</td><td>The AI companion and ComCentre</td></tr>
+          <tr><td>NORA</td><td class="mono">5002</td><td>ESP32 mecanum robot and WiFi hub</td></tr>
+          <tr><td>KIDA-00</td><td class="mono">5003</td><td>Raspberry Pi 3 tank</td></tr>
+          <tr><td>KIDA-01</td><td class="mono">5004</td><td>Raspberry Pi 5 + Hailo tank</td></tr>
+          <tr><td>WHIP</td><td class="mono">5005</td><td>18-DOF hexapod</td></tr>
+          <tr><td>MILA</td><td class="mono">5010</td><td>ESP8266 mini tank</td></tr>
+          <tr><td>ARM</td><td class="mono">5011</td><td>Robot arm</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="run">
+  <div class="wrap">
+    <h2>Run</h2>
+    <h3 class="title">Start the reference hub</h3>
+    <p class="muted"><code>app.py</code> runs the fleet registry, mDNS discovery (including browsing for ComCentre) and the NORA integration threads in one Python process, with no compiling.</p>
+<pre><span class="p">$</span> python3 -m venv venv
+<span class="p">$</span> source venv/bin/activate
+<span class="p">$</span> pip install --upgrade pip
+<span class="p">$</span> pip install -r requirements.txt
+<span class="p">$</span> python app.py</pre>
+    <p class="note"><strong>One hub per machine.</strong> Every hub speaks the same <code>/robots</code> + <code>/register</code> protocol on port 5000, so run one or another, not several at once.</p>
+    <h3 class="sub">Native C++ hub</h3>
+    <p class="muted"><code>PC App/App</code> is the native fleet-registry server for Windows and Linux. <code>build.sh</code> installs the dev packages it needs (asking for sudo), then builds into <code>PC App/App/bin/</code>.</p>
+<pre><span class="p">$</span> ./build.sh
+<span class="p">$</span> ./run_server.sh</pre>
+  </div>
+</section>
+
+<section id="hubs">
+  <div class="wrap">
+    <h2>Hubs</h2>
+    <h3 class="title">The same hub, your language</h3>
+    <p class="muted"><code>PC App/Go</code>, <code>Rust</code>, <code>FSharp</code> (.NET 8) and <code>Julia</code> are complete, cross-platform re-implementations of <code>app.py</code>. Each has the registry (<code>/register</code>, <code>/robots</code>, <code>/ping</code>), <code>/peers</code> with mDNS, the WiFi/Bluetooth <code>/mode</code> and NORA heartbeat, the same dashboard, and a <code>--scan</code> subnet scanner.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Language</th><th>Launch</th><th>Needs</th></tr></thead>
+        <tbody>
+          <tr><td>Go</td><td><code>run_server_go.bat</code> / <code>./run_server_go.sh</code></td><td><a href="https://go.dev/dl/">Go</a></td></tr>
+          <tr><td>Rust</td><td><code>run_server_rust.bat</code> / <code>./run_server_rust.sh</code></td><td><a href="https://rustup.rs/">Rust</a></td></tr>
+          <tr><td>F#</td><td><code>run_server_fsharp.bat</code> / <code>./run_server_fsharp.sh</code></td><td><a href="https://dotnet.microsoft.com/download">.NET 8 SDK</a></td></tr>
+          <tr><td>Julia</td><td><code>run_server_julia.bat</code> / <code>./run_server_julia.sh</code></td><td><a href="https://julialang.org/downloads/">Julia</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+<pre><span class="p">$</span> ./run_server_go.sh                         <span class="c"># start the hub on :5000</span>
+<span class="p">$</span> ./run_server_rust.sh --scan                <span class="c"># scan this subnet for hubs and robots</span>
+<span class="p">$</span> ./run_server_fsharp.sh --name RIFT2 --port 5010 --no-internet-share</pre>
+    <p class="muted">Options (all four): <code>--name</code>, <code>--port</code>, <code>--nora-host</code>, <code>--nora-port</code>, <code>--heartbeat-secs</code>, <code>--ttl-secs</code>, <code>--no-heartbeat</code>, <code>--no-mdns</code>, <code>--no-internet-share</code>, <code>--root</code>, <code>--scan</code>.</p>
+    <h3 class="sub">C++, Unity and Android</h3>
+    <div class="grid cols-3">
+      <div class="card">
+        <span class="k">Desktop</span>
+        <h4>C++</h4>
+        <p><code>PC App/App</code>: Windows and Linux, no Avahi, curl or nlohmann needed. Windows links statically, so the exe runs from any shell.</p>
+      </div>
+      <div class="card">
+        <span class="k">Engine</span>
+        <h4>Unity</h4>
+        <p><code>Unity App/RIFT/Assets/Rift</code>: a hub that starts on scene load, with an on-screen panel for name, port and NORA settings.</p>
+      </div>
+      <div class="card">
+        <span class="k">Mobile</span>
+        <h4>Android</h4>
+        <p><code>Android App/</code>: Kotlin on NanoHTTPD, with a foreground service, activity and Bluetooth link to NORA.</p>
+      </div>
+    </div>
+    <p class="note"><strong>Verified:</strong> every hub passes the same 32-check protocol suite and interoperates with the others over mDNS and heartbeats. Not yet run on real hardware: Linux-only paths, Bluetooth, internet sharing and the Android service.</p>
+  </div>
+</section>
+
+<section id="screens">
+  <div class="wrap">
+    <h2>Screens</h2>
+    <h3 class="title">The controllers</h3>
+    <p class="muted">Captured without a robot connected, so live values show their offline state.</p>
+    <div class="screens">
+      <figure class="shot">
+        <img src="images/screenshots/fleet-dashboard.png" alt="RIFT's fleet dashboard with connection mode, fleet and peers" width="1000" height="640" loading="lazy">
+        <figcaption>Fleet dashboard (served by every hub)</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="related">
+  <div class="wrap">
+    <h2>DREAM Robotics</h2>
+    <h3 class="title">The rest of the family</h3>
+    <div class="related">
+      <a href="https://github.com/CursedPrograms/MILA-Robot-v00">MILA-Robot-v00</a>
+      <a href="https://github.com/CursedPrograms/IDA-Robot-v00">IDA-Robot-v00</a>
+      <a href="https://github.com/CursedPrograms/KIDA-Robot-v00">KIDA-Robot-v00</a>
+      <a href="https://github.com/CursedPrograms/KIDA-Robot-v01">KIDA-Robot-v01</a>
+      <a href="https://github.com/CursedPrograms/NORA-Robot-v00">NORA-Robot-v00</a>
+      <a href="https://github.com/CursedPrograms/WHIP-Robot-v00">WHIP-Robot-v00</a>
+      <a href="https://github.com/CursedPrograms/ARM-Robot-v01">ARM-Robot-v01</a>
+      <a href="https://github.com/CursedPrograms/DREAM">DREAM</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="links">
+      <a href="https://github.com/CursedPrograms/RIFT">GitHub</a>
+      <a href="https://x.com/NorowaretaGemu">X: @NorowaretaGemu</a>
+      <a href="https://cursed-entertainment.itch.io/">itch.io</a>
+      <a href="https://ko-fi.com/cursedentertainment">Ko-fi</a>
+      <a href="https://github.com/CursedPrograms/RIFT/blob/main/LICENSE">MIT License</a>
+    </div>
+
+    <div class="logos">
+      <a href="https://ko-fi.com/cursedentertainment">
+        <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support Cursed Entertainment on Ko-fi" width="180" loading="lazy">
+      </a>
+      <a href="https://cursed-entertainment.itch.io/">
+        <img src="https://github.com/CursedPrograms/cursedentertainment/raw/main/images/logos/logo-wide-grey.png" alt="Cursed Entertainment" width="250" loading="lazy">
+      </a>
+      <a href="https://github.com/SynthWomb">
+        <img src="https://github.com/SynthWomb/synth.womb/blob/main/logos/synthwomb07.png?raw=true" alt="SynthWomb" width="200" loading="lazy">
+      </a>
+    </div>
+
+    <div>&copy; Cursed Entertainment 2026</div>
+  </div>
+</footer>
+
+</body>
+</html>

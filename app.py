@@ -6,6 +6,8 @@ They implement the same protocol on the same port (5000), so run one or
 the other, not both, on a given machine.
 """
 
+import os
+import re
 import socket
 import threading
 import time
@@ -117,6 +119,26 @@ def peers():
 @app.route("/")
 def index():
     return render_template("index.html", this_name=THIS_NAME, my_ip=MY_IP, this_port=THIS_PORT)
+
+
+# ── Colour scheme ───────────────────────────────────────────────────────────
+# colour_scheme.xml (repo root) as CSS variables, linked after styles.css, so
+# editing the XML restyles the dashboard with no CSS change. Read on every
+# request: an edit shows on the next page load. A missing or unreadable file
+# serves an empty sheet and styles.css's built-in defaults apply.
+
+COLOUR_SCHEME_XML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "colour_scheme.xml")
+
+
+@app.route("/colour_scheme.css")
+def colour_scheme_css():
+    try:
+        with open(COLOUR_SCHEME_XML, encoding="utf-8") as f:
+            pairs = re.findall(r'name="(\w+)"\s+value="(#[0-9A-Fa-f]{6})"', f.read())
+    except OSError:
+        pairs = []
+    css = ":root {\n" + "".join(f"    --{n.replace('_', '-')}: {v};\n" for n, v in pairs) + "}\n"
+    return css, 200, {"Content-Type": "text/css", "Cache-Control": "no-cache"}
 
 
 # ── Connection Mode: WiFi (default) or Bluetooth heartbeat to NORA ─────────

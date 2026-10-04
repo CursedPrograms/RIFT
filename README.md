@@ -39,6 +39,11 @@
 ## Real-time Intelligent Fleet Technology
 ### A DREAM Robotics System
 
+<div align="center">
+  <img src="images/rift_avatar.jpg" alt="RIFT avatar: a human representation of the robot" width="320"/>
+  <p><i>RIFT</i></p>
+</div>
+
 ## Related Projects (DREAM Robotics Ecosystem)
 
 - [KIDA-Robot-v00](https://github.com/CursedPrograms/KIDA-Robot-v00)
@@ -192,6 +197,16 @@ The same protocol (`/ping`, `/register`, `/robots`, `/peers`, `/mode`, dashboard
 `Registration.kt` posts JSON, which every hub above accepts (only the original `app.py` is form-only).
 
 Verified: the C++, Unity (C# on a desktop runtime with Unity stubs) and Android (core on a JVM) hubs pass the same 32-check protocol suite and interoperate over mDNS/heartbeat with the Go/Rust/F#/Julia hubs. Not run on real hardware: Linux-only code paths, Bluetooth, internet sharing, and the Android service/activity (`RiftAndroid.kt` was only compile-checked against an old android.jar, which lacks the API 26 calls).
+
+## Screenshots
+
+<div align="center">
+  <img src="images/screenshots/fleet-dashboard.png" alt="Fleet dashboard" width="640"/>
+</div>
+
+<p align="center"><i>Fleet dashboard. Captured without a robot connected, so live values show their offline state.</i></p>
+
+---
 
 <br>
 <div align="center">

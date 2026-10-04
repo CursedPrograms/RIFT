@@ -4,6 +4,8 @@ import socket
 from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser
 import threading
 
+import colour_scheme
+
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
@@ -66,7 +68,8 @@ browser = ServiceBrowser(zeroconf, TYPE, MyListener())
 
 @app.route("/")
 def dashboard():
-    status_html = f'<div style="margin:10px;"><span style="color:green;">●</span> <b>{THIS_NAME}</b> (Self)</div>'
+    c = colour_scheme.load()
+    status_html = f'<div style="margin:10px;"><span style="color:{c["online"]};">●</span> <b>{THIS_NAME}</b> (Self)</div>'
 
     # Copy dict keys to avoid "dictionary changed size during iteration" errors
     for name in list(found_servers.keys()):
@@ -74,7 +77,7 @@ def dashboard():
         try:
             r = requests.get(f"{url}/ping", timeout=0.5)
             if r.status_code == 200:
-                status_html += f'<div style="margin:10px;"><span style="color:green;">●</span> <b>{name}</b> Online</div>'
+                status_html += f'<div style="margin:10px;"><span style="color:{c["online"]};">●</span> <b>{name}</b> Online</div>'
         except:
             continue
 
@@ -85,11 +88,11 @@ def dashboard():
                     setTimeout(function(){{ window.location.reload(1); }}, 3000);
                 </script>
             </head>
-            <body style="text-align:center; font-family:sans-serif; padding-top:50px; background-color:#f4f4f9;">
-                <div style="display:inline-block; padding:20px; border-radius:15px; background:white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    <h1>Active Network</h1>
-                    <p style="color:gray; font-size:0.8em;">My IP: {my_ip}</p>
-                    <hr>
+            <body style="text-align:center; font-family:sans-serif; padding-top:50px; background-color:{c['background']}; color:{c['text']};">
+                <div style="display:inline-block; padding:20px; border-radius:15px; background:{c['panel']}; border:1px solid {c['border']};">
+                    <h1 style="color:{c['accent']};">Active Network</h1>
+                    <p style="color:{c['text_sec']}; font-size:0.8em;">My IP: {my_ip}</p>
+                    <hr style="border:0; border-top:1px solid {c['border']};">
                     {status_html}
                 </div>
             </body>
