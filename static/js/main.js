@@ -16,15 +16,27 @@ function renderNodes(el, items, emptyText) {
     `).join('');
 }
 
-// The whole fleet (RIFT's registry + NORA's + NORA herself), each with a
-// button that opens its own web page in a new tab.
+// Each robot's own web page: a web:<port> capability if it sent one, else
+// its usual port (same table as app.py's WEB_PORTS).
+const WEB_PORTS = { NORA: 5002, KIDA00: 5003, KIDA01: 5004, WHIP: 5005, COMCENTRE: 5009, MILA: 5010, ARM: 5011 };
+function webUrl(r) {
+    const caps = r.capabilities || [];
+    const cap = prefix => (caps.find(c => c.startsWith(prefix) && /^\d+$/.test(c.slice(prefix.length))) || '').slice(prefix.length);
+    const port = cap('web:') || WEB_PORTS[(r.name || '').toUpperCase()] || cap('talk:');
+    if (!port) return null;
+    return `${(r.name || '').toUpperCase() === 'COMCENTRE' ? 'https' : 'http'}://${r.ip}:${port}/`;
+}
+
+// The whole fleet with an Open button per robot. app.py serves /fleet (its
+// registry + NORA's + NORA herself); the other hubs (C++, Go, Rust, Julia,
+// F#) only have /robots, so fall back to that.
 function refreshRobots() {
     fetch('/fleet')
-        .then(r => r.json())
+        .then(r => r.ok ? r.json() : fetch('/robots').then(r2 => r2.json()))
         .then(data => {
             const items = (data.robots || []).map(r => ({
                 name: r.name,
-                url: r.url,
+                url: r.url || webUrl(r),
                 meta: `${r.type} @ ${r.ip} — ${(r.capabilities || []).join(', ') || 'no capabilities'}`,
             }));
             renderNodes(robotsEl, items, 'No robots online yet.');
@@ -56,9 +68,17 @@ function moodWord(m) {
     return 'sleepy';
 }
 
+// Conversations and the mission log come from app.py; on a hub without them
+// the sections are hidden instead of sitting empty.
+function hideIfMissing(r, sectionId) {
+    document.getElementById(sectionId).style.display = r.ok ? '' : 'none';
+    if (!r.ok) throw new Error('not on this hub');
+    return r.json();
+}
+
 function refreshTalk() {
     fetch('/talk')
-        .then(r => r.json())
+        .then(r => hideIfMissing(r, 'talkSection'))
         .then(data => {
             const log = (data.log || []).slice(-15).reverse();
             talkEl.innerHTML = log.length ? log.map(e => `
@@ -85,7 +105,7 @@ const missionEl = document.getElementById('mission');
 
 function refreshMission() {
     fetch('/mission')
-        .then(r => r.json())
+        .then(r => hideIfMissing(r, 'missionSection'))
         .then(data => {
             document.getElementById('missionDay').textContent = `mission day ${data.day}`;
             const entries = (data.entries || []).slice().reverse();
