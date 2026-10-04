@@ -148,7 +148,7 @@ def talk_now():
 # the address of its own web page: a "web:<port>" capability if it sends one,
 # else its usual port below.
 WEB_PORTS = {"NORA": 5002, "KIDA00": 5003, "KIDA01": 5004, "WHIP": 5005,
-             "COMCENTRE": 5009, "MILA": 5010, "ARM": 5011}
+             "COMCENTRE": 5009, "MILA": 5010, "ARM": 5011, "NINA": 5012}
 HTTPS_ROBOTS = {"COMCENTRE"}   # DREAM serves HTTPS when it has a certificate
 
 

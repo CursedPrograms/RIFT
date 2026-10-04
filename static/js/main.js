@@ -18,7 +18,7 @@ function renderNodes(el, items, emptyText) {
 
 // Each robot's own web page: a web:<port> capability if it sent one, else
 // its usual port (same table as app.py's WEB_PORTS).
-const WEB_PORTS = { NORA: 5002, KIDA00: 5003, KIDA01: 5004, WHIP: 5005, COMCENTRE: 5009, MILA: 5010, ARM: 5011 };
+const WEB_PORTS = { NORA: 5002, KIDA00: 5003, KIDA01: 5004, WHIP: 5005, COMCENTRE: 5009, MILA: 5010, ARM: 5011, NINA: 5012 };
 function webUrl(r) {
     const caps = r.capabilities || [];
     const cap = prefix => (caps.find(c => c.startsWith(prefix) && /^\d+$/.test(c.slice(prefix.length))) || '').slice(prefix.length);
