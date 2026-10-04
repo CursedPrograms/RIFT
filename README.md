@@ -81,7 +81,8 @@ This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v
 
 ```bash
 RIFT: :5000
-DREAM: :5009 (ComCentre, HTTPS)
+DREAM: :5001 (her own site - DREAM on your phone)
+ComCentre: :5009 (DREAM's dashboard and API, HTTPS)
 NORA: :5002
 KIDA-00: :5003
 KIDA-01: :5004
