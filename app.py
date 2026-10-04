@@ -18,6 +18,10 @@ from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser
 from Fleet.register import start_fleet_authority
 from Fleet.internet_share import start_internet_share
 from Fleet import conversations, mission
+from Fleet.rift_board import RiftBoard
+
+# RIFT's own Arduino (arduino/rift_link): IR transmitter, receiver and buzzer.
+board = RiftBoard()
 
 app = Flask(__name__)
 
@@ -124,6 +128,43 @@ def _fleet_snapshot():
 @app.route("/talk")
 def talk_log():
     return jsonify(conversations.snapshot())
+
+
+# ── RIFT's own board: IR + buzzer ───────────────────────────────────────────
+# GET /board                    connected? which port, the last IR frames heard
+# GET /board/link?r=ida&c=fw    drive a robot over IR (same commands as NORA's /link)
+# GET /board/say?r=mila&p=0     beep a phrase, then send it to that robot over IR
+# GET /board/talk?u=7           beep a Brainfuck utterance (0-13) on RIFT's buzzer
+
+@app.route("/board")
+def board_status():
+    return jsonify(board.status())
+
+
+@app.route("/board/link")
+def board_link():
+    ok = board.link(request.args.get("r", ""), request.args.get("c", ""))
+    return jsonify({"ok": ok}), (200 if ok else 503)
+
+
+@app.route("/board/say")
+def board_say():
+    try:
+        p = int(request.args.get("p", ""))
+    except ValueError:
+        return jsonify({"ok": False, "error": "p = 0-6"}), 400
+    ok = board.say(request.args.get("r", ""), p)
+    return jsonify({"ok": ok}), (200 if ok else 503)
+
+
+@app.route("/board/talk")
+def board_talk():
+    try:
+        u = int(request.args.get("u", ""))
+    except ValueError:
+        return jsonify({"ok": False, "error": "u = 0-13"}), 400
+    ok = board.talk(u)
+    return jsonify({"ok": ok}), (200 if ok else 503)
 
 
 @app.route("/talk", methods=["POST"])
@@ -337,6 +378,7 @@ if __name__ == "__main__":
     print("[RIFT] Internet-share to NORA's AP started")
 
     conversations.start(_fleet_snapshot)
+    board.start()   # looks for its own Arduino after 25 s, on ports nobody else has open
     threading.Thread(target=_watch_fleet, daemon=True, name="mission-watcher").start()
     print(f"[RIFT] Mission log: {mission.PATH} (day {mission.day()})")
     print("[RIFT] Fleet conversations started (Brainfuck chirps, see /talk)")

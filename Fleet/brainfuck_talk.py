@@ -40,6 +40,7 @@ SKETCHES = [
     "KIDA-Robot-v01/scripts/arduino/arduino00",
     "DREAM/dream_sensors",
     "ARM-Robot-v01/scripts/arm",
+    "RIFT/arduino/rift_link",
 ]
 
 # One tone per symbol (Hz before the robot's voice scaling) and its length

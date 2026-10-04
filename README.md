@@ -106,6 +106,23 @@ RIFT has the robots chat: every 25–60 s it picks two that can talk and has the
 - **Fleet:** the dashboard lists every robot online - RIFT's own registry, NORA's (where most robots register) and NORA herself - each with an **Open** button for its own web page. The address comes from a `web:<port>` capability if the robot registers one, else its usual port (NORA 5002, KIDA00 5003, KIDA01 5004, WHIP 5005, DREAM/ComCentre 5009 over HTTPS, MILA 5010, ARM 5011). `GET /fleet` returns the same list as JSON.
 - **Mission log:** RIFT keeps the fleet's diary (`Fleet/mission.py`): who came online or went quiet, who said what to whom, whose mood changed, counted in mission days from the first entry. It's saved to `mission_log.json`, so the mission carries on across restarts. `GET /mission` returns it; a robot can write its own entry with `POST /mission {"who": "DREAM", "text": "..."}`.
 
+## 📡 RIFT's own board (IR + buzzer)
+
+An Arduino UNO on the hub PC ([`arduino/rift_link`](arduino/rift_link/rift_link.ino)) gives RIFT what NORA has: an IR transmitter to drive and greet IDA, MILA, WHIP and KIDA-01 over the fleet IR link, an IR receiver that reports every frame it hears (NORA's "I am here" beacon, the robots' phrases, any remote), and a buzzer that speaks the Brainfuck phrases in the hub's own low voice.
+
+| Part | UNO pin |
+| :--- | :--- |
+| IR LED (940 nm), via 100 Ω (or an NPN transistor for range) | 3 |
+| IR receiver OUT (VS1838B / TSOP38238, 5 V) | 2 |
+| Passive buzzer | 8 |
+
+RIFT finds the board by the fleet handshake (`WHO` → `I am Rift`), 25 s after it starts and only on ports nobody else has open, so it never steals ARM's or DREAM's board. Without the board everything below just answers `503`.
+
+- `GET /board`: connected or not, its port, the last IR frames heard
+- `GET /board/link?r=ida&c=fw`: drive a robot (`fw bw left right stop auto manual speed`)
+- `GET /board/say?r=mila&p=0`: beep a phrase (0-6), then send it to that robot over IR
+- `GET /board/talk?u=7`: beep a Brainfuck utterance (0-13)
+
 ## How to Run:
 
 <details>
