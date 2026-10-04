@@ -81,7 +81,7 @@ This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v
 
 ```bash
 RIFT: :5000
-DREAM: :5001
+DREAM: :5009 (ComCentre, HTTPS)
 NORA: :5002
 KIDA-00: :5003
 KIDA-01: :5004

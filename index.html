@@ -23,6 +23,7 @@
     <ul>
       <li><a href="#overview">Overview</a></li>
       <li><a href="#fleet">Fleet</a></li>
+      <li><a href="#talk">Talk</a></li>
       <li><a href="#run">Run</a></li>
       <li><a href="#hubs">Hubs</a></li>
       <li><a href="#screens">Screens</a></li>
@@ -111,7 +112,7 @@
         <thead><tr><th>Member</th><th>Port</th><th>What it is</th></tr></thead>
         <tbody>
           <tr><td>RIFT</td><td class="mono">5000</td><td>This fleet hub</td></tr>
-          <tr><td>DREAM</td><td class="mono">5001</td><td>The AI companion and ComCentre</td></tr>
+          <tr><td>DREAM</td><td class="mono">5009</td><td>The AI companion and ComCentre (HTTPS)</td></tr>
           <tr><td>NORA</td><td class="mono">5002</td><td>ESP32 mecanum robot and WiFi hub</td></tr>
           <tr><td>KIDA-00</td><td class="mono">5003</td><td>Raspberry Pi 3 tank</td></tr>
           <tr><td>KIDA-01</td><td class="mono">5004</td><td>Raspberry Pi 5 + Hailo tank</td></tr>
@@ -124,11 +125,36 @@
   </div>
 </section>
 
+<section id="talk">
+  <div class="wrap">
+    <h2>Talk</h2>
+    <h3 class="title">The robots chat, and RIFT keeps the diary</h3>
+    <p class="muted">Every 25&ndash;60&nbsp;s RIFT picks two robots that can talk and has the first say a phrase and the second answer. Every phrase is a <strong>Brainfuck</strong> program that prints its words &mdash; hello is <code>++++++++[&gt;+++++++++++++&lt;-]&gt;.+.</code> &rarr; <code>hi</code> &mdash; and a robot says it by beeping the program on its buzzer, one tone per symbol, in its own voice. <a href="https://cursedprograms.github.io/RIFT/">RIFT</a> runs the conversations and asks each robot to speak with <code>GET /chirp?u=&lt;0-13&gt;</code> (phrases 0&ndash;6, replies 7&ndash;13).</p>
+    <div class="grid cols-3">
+      <div class="card">
+        <h4>Phrasebook</h4>
+        <p><code>Fleet/brainfuck_talk.py</code> builds the shortest program it can for each phrase and reply, checks them with an interpreter, and writes the same <code>talk_bf.h</code> into every robot&rsquo;s sketch.</p>
+      </div>
+      <div class="card">
+        <h4>Personalities</h4>
+        <p>Each robot has its own chattiness and favourite phrases, and a mood that drifts with the time of day and how its chats go.</p>
+      </div>
+      <div class="card">
+        <h4>Mission log</h4>
+        <p>A diary in mission days: who came online or went quiet, who said what to whom, whose mood changed. Robots can add entries with <code>POST /mission</code>.</p>
+      </div>
+    </div>
+    <p class="muted spaced"><code>GET /talk</code> returns the conversation log and moods, <code>POST /talk</code> starts one now, <code>GET /mission</code> returns the diary. The dashboard shows both, and every robot in its Fleet list has an <strong>Open</strong> button for its own web page.</p>
+  </div>
+</section>
+
 <section id="run">
   <div class="wrap">
     <h2>Run</h2>
     <h3 class="title">Start the reference hub</h3>
-    <p class="muted"><code>app.py</code> runs the fleet registry, mDNS discovery (including browsing for ComCentre) and the NORA integration threads in one Python process, with no compiling.</p>
+    <p class="muted"><code>app.py</code> runs the fleet registry, mDNS discovery (including browsing for ComCentre), the NORA integration threads, the conversations and the mission log in one Python process, with no compiling. On Windows <code>run.bat</code> does it all: it sets up <code>venv</code> and installs the requirements the first time, then starts <code>app.py</code>.</p>
+<pre><span class="p">&gt;</span> run.bat</pre>
+    <p class="muted">Or by hand (Linux / macOS):</p>
 <pre><span class="p">$</span> python3 -m venv venv
 <span class="p">$</span> source venv/bin/activate
 <span class="p">$</span> pip install --upgrade pip
