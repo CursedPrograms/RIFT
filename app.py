@@ -19,6 +19,7 @@ from Fleet.register import start_fleet_authority
 from Fleet.internet_share import start_internet_share
 from Fleet import conversations, mission
 from Fleet.rift_board import RiftBoard
+from Fleet.bt_autopair import start_autopair
 
 # RIFT's own Arduino (arduino/rift_link): IR transmitter, receiver and buzzer.
 board = RiftBoard()
@@ -379,6 +380,7 @@ if __name__ == "__main__":
 
     conversations.start(_fleet_snapshot)
     board.start()   # looks for its own Arduino after 25 s, on ports nobody else has open
+    start_autopair()   # pairs with NORA (and any fleet robot) over Bluetooth; skips if there's no radio
     threading.Thread(target=_watch_fleet, daemon=True, name="mission-watcher").start()
     print(f"[RIFT] Mission log: {mission.PATH} (day {mission.day()})")
     print("[RIFT] Fleet conversations started (Brainfuck chirps, see /talk)")
