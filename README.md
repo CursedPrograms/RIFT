@@ -90,6 +90,14 @@ MILA: :5010
 ARM: :5011
 ```
 
+## 💬 Conversations (in Brainfuck)
+RIFT has the robots chat: every 25–60 s it picks two that can talk and has the first say a phrase and the second answer. Every phrase is a **Brainfuck program that prints its words** (hello is `++++++++[>+++++++++++++<-]>.+.` → `hi`), and a robot says it by beeping the program on its buzzer, one tone per symbol, in its own voice.
+
+- **Phrasebook:** `Fleet/brainfuck_talk.py` builds the shortest program it can for each phrase (0–6: hello, how are you, happy, curious, sleepy, let's play, bye) and reply (7–13), checks each with an interpreter, and writes the same `talk_bf.h` into every robot's sketch plus `Fleet/talk_bf.json`. Edit `PHRASES` and rerun it to change what they say.
+- **Who talks:** robots that register a `talk:<port>` capability (with RIFT or NORA) and NORA herself; RIFT asks them with `GET /chirp?u=<0-13>`.
+- **Personalities and moods:** each robot has its own chattiness and favourite phrases (`Fleet/conversations.py`), and a mood that drifts with the time of day and how its chats go - bright robots suggest playing, sleepy ones yawn.
+- **Log:** `GET /talk` returns the shared conversation log and moods (NORA's IR chats with IDA are merged in); `POST /talk` starts one now. The dashboard's **Conversations** section shows who said what, the program and what it prints.
+
 ## How to Run:
 
 <details>

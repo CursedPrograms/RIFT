@@ -37,9 +37,48 @@ function refreshPeers() {
         .catch(() => {});
 }
 
+// ── Conversations ────────────────────────────────────────────────────────
+// Each line: who said what to whom, the Brainfuck program and what it prints.
+
+const talkEl  = document.getElementById('talk');
+const moodsEl = document.getElementById('moods');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function moodWord(m) {
+    if (m > 0.5) return 'bright';
+    if (m > 0.1) return 'content';
+    if (m > -0.3) return 'quiet';
+    return 'sleepy';
+}
+
+function refreshTalk() {
+    fetch('/talk')
+        .then(r => r.json())
+        .then(data => {
+            const log = (data.log || []).slice(-15).reverse();
+            talkEl.innerHTML = log.length ? log.map(e => `
+                <div class="line${e.ok ? '' : ' failed'}">
+                    <span class="via">${e.via === 'ir' ? 'IR' : 'WiFi'} · ${new Date(e.t * 1000).toLocaleTimeString()}</span>
+                    <span class="who">${esc(e.from)} &rarr; ${esc(e.to)}</span>
+                    <span class="says">&ldquo;${esc(e.text)}&rdquo;</span>${e.ok ? '' : ' (no answer)'}
+                    <span class="bf">${esc(e.bf)}</span>
+                </div>`).join('') : '<p class="empty">No conversations yet.</p>';
+            moodsEl.innerHTML = Object.entries(data.moods || {})
+                .map(([n, m]) => `<span class="mood">${esc(n)}: ${moodWord(m)}</span>`).join('');
+        })
+        .catch(() => {});
+}
+
+document.getElementById('talkNow').addEventListener('click', () => {
+    fetch('/talk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+        .then(() => setTimeout(refreshTalk, 500))
+        .catch(() => {});
+});
+
 function refreshAll() {
     refreshRobots();
     refreshPeers();
+    refreshTalk();
 }
 
 refreshAll();

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/colour_scheme.css">
 </head>
 <body>
+    <img id="avatar" src="{{ url_for('static', filename='img/avatar.jpg') }}" alt="RIFT">
     <h1>RIFT</h1>
     <h2>Real-time Intelligent Fleet Technology</h2>
     <p id="self">{{ this_name }} &middot; {{ my_ip }}:{{ this_port }}</p>
@@ -29,6 +30,13 @@
     <section>
         <h3>Registered Fleet</h3>
         <div id="robots" class="grid"><p class="empty">No robots registered yet.</p></div>
+    </section>
+
+    <section>
+        <h3>Conversations <button id="talkNow">Start one</button></h3>
+        <p class="hint">The robots chat in Brainfuck: each phrase is a program that prints its words, beeped one tone per symbol.</p>
+        <div id="moods" class="moods"></div>
+        <div id="talk" class="talk"><p class="empty">No conversations yet.</p></div>
     </section>
 
     <section>

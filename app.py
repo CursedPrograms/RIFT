@@ -17,6 +17,7 @@ from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser
 
 from Fleet.register import start_fleet_authority
 from Fleet.internet_share import start_internet_share
+from Fleet import conversations
 
 app = Flask(__name__)
 
@@ -108,6 +109,37 @@ def robots():
             for name, m in _fleet.items()
         ]
     return jsonify({"authority": THIS_NAME, "robots": roster})
+
+
+def _fleet_snapshot():
+    _prune_fleet()
+    with _fleet_lock:
+        return [{"name": n, "ip": m["ip"], "capabilities": m["capabilities"]} for n, m in _fleet.items()]
+
+
+# ── Conversations ───────────────────────────────────────────────────────────
+# The robots chatting in Brainfuck (Fleet/conversations.py): GET /talk is the
+# shared log + moods; POST /talk starts one now ({"from": .., "to": ..} optional).
+
+@app.route("/talk")
+def talk_log():
+    return jsonify(conversations.snapshot())
+
+
+@app.route("/talk", methods=["POST"])
+def talk_now():
+    data = request.get_json(silent=True) or {}
+    urls = conversations.talkers(_fleet_snapshot())
+    a, b = data.get("from"), data.get("to")
+    names = list(urls)
+    if a not in urls:
+        a = names[0] if names else None
+    if b not in urls or b == a:
+        b = next((n for n in names if n != a), None)
+    if not a or not b:
+        return jsonify({"error": "need two robots that can talk", "talkers": names}), 409
+    threading.Thread(target=conversations.converse, args=(a, b, urls), daemon=True).start()
+    return jsonify({"started": True, "from": a, "to": b})
 
 
 @app.route("/peers")
@@ -237,6 +269,9 @@ if __name__ == "__main__":
 
     start_internet_share()
     print("[RIFT] Internet-share to NORA's AP started")
+
+    conversations.start(_fleet_snapshot)
+    print("[RIFT] Fleet conversations started (Brainfuck chirps, see /talk)")
 
     try:
         app.run(host="0.0.0.0", port=THIS_PORT, debug=False, use_reloader=False, threaded=True)
