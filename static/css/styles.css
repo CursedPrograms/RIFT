@@ -28,6 +28,23 @@ body {
     gap: 20px;
 }
 
+/* fleet cards: open each robot's own page */
+.node-box .open { margin-top: 6px; align-self: flex-start; font-size: 0.75rem; padding: 3px 12px; border-radius: 4px;
+                  border: 1px solid var(--accent); color: var(--accent); text-decoration: none; }
+.node-box .open:hover { background: var(--button-hover-bg); }
+.node-box a.name { color: var(--text); text-decoration: none; }
+.node-box a.name:hover { color: var(--accent); }
+
+/* mission log */
+.day { float: right; font-size: 0.75rem; color: var(--text-sec); font-weight: normal; }
+.mission { display: flex; flex-direction: column; gap: 2px; font-size: 0.8rem; }
+.mission .dayhead { color: var(--text-sec); font-size: 0.72rem; margin: 8px 0 2px; letter-spacing: 1px; }
+.mission .entry { display: flex; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+.mission .time { color: var(--text-dim); font-family: Consolas, monospace; font-size: 0.72rem; flex: none; }
+.mission .k-arrive { color: var(--accent); }
+.mission .k-leave { color: var(--text-dim); }
+.mission .k-mood { color: var(--text-sec); font-style: italic; }
+
 /* conversations */
 .hint { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 8px; }
 .moods { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }

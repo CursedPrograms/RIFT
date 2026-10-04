@@ -20,6 +20,8 @@ import threading
 import time
 import urllib.request
 
+from Fleet import mission
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 NORA_HOST = "192.168.4.1"
 NORA_FLEET_PORT = 5000   # her fleet registry (/robots)
@@ -64,8 +66,22 @@ def _mood(name):
     return max(-1.0, min(1.0, _moods.get(name, 0.3) + night))
 
 
+def mood_word(m):
+    if m > 0.5:
+        return "bright"
+    if m > 0.1:
+        return "content"
+    if m > -0.3:
+        return "quiet"
+    return "sleepy"
+
+
 def _nudge_mood(name, by):
+    before = mood_word(_mood(name))
     _moods[name] = max(-1.0, min(1.0, _moods.get(name, 0.3) + by))
+    after = mood_word(_mood(name))
+    if after != before:
+        mission.add(name, f"{name} is feeling {after} now.", "mood")
 
 
 def _pick_phrase(name):
@@ -146,6 +162,9 @@ def converse(a, b, urls, phrase=None):
     ok_b = _get(f"{urls[b]}/chirp?u={r}") is not None
     _record({"t": time.time(), "from": b, "to": a, "u": r, "said": UTTERANCES[r]["name"], "kind": "reply",
              "text": UTTERANCES[r]["text"], "bf": UTTERANCES[r]["bf"], "via": "wifi", "ok": ok_b})
+    said, reply = UTTERANCES[p]["text"], UTTERANCES[r]["text"]
+    mission.add(a, f'{a} said "{said}" to {b}' + (f' and {b} answered "{reply}".' if ok_b else f", but {b} didn't answer."),
+                "chat")
     # a good chat lifts both moods a little; being ignored doesn't
     _nudge_mood(a, 0.15 if ok_b else -0.15)
     _nudge_mood(b, 0.1 if ok_b else 0)
@@ -172,9 +191,11 @@ def merge_nora_ir_log():
         if key in _nora_seen_ms:
             continue
         _nora_seen_ms.add(key)
-        _record({"t": time.time() - (now_ms - key) / 1000, "from": e.get("from", "NORA"), "to": e.get("to", "IDA"),
+        t = time.time() - (now_ms - key) / 1000
+        _record({"t": t, "from": e.get("from", "NORA"), "to": e.get("to", "IDA"),
                  "u": None, "said": e.get("said"), "kind": "phrase", "text": e.get("text", ""), "bf": e.get("bf", ""),
                  "via": "ir", "ok": True})
+        mission.add("NORA", f'NORA said "{e.get("text", "")}" to {e.get("to", "IDA")} over IR.', "chat", t=t)
 
 
 def snapshot():

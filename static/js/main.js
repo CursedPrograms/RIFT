@@ -8,21 +8,26 @@ function renderNodes(el, items, emptyText) {
     }
     el.innerHTML = items.map(item => `
         <div class="node-box">
-            <span class="name">${item.name}</span>
+            ${item.url ? `<a class="name" href="${item.url}" target="_blank" rel="noopener">${item.name}</a>`
+                       : `<span class="name">${item.name}</span>`}
             <span class="meta">${item.meta}</span>
+            ${item.url ? `<a class="open" href="${item.url}" target="_blank" rel="noopener">Open &rarr;</a>` : ''}
         </div>
     `).join('');
 }
 
+// The whole fleet (RIFT's registry + NORA's + NORA herself), each with a
+// button that opens its own web page in a new tab.
 function refreshRobots() {
-    fetch('/robots')
+    fetch('/fleet')
         .then(r => r.json())
         .then(data => {
             const items = (data.robots || []).map(r => ({
                 name: r.name,
+                url: r.url,
                 meta: `${r.type} @ ${r.ip} — ${(r.capabilities || []).join(', ') || 'no capabilities'}`,
             }));
-            renderNodes(robotsEl, items, 'No robots registered yet.');
+            renderNodes(robotsEl, items, 'No robots online yet.');
         })
         .catch(() => {});
 }
@@ -31,7 +36,7 @@ function refreshPeers() {
     fetch('/peers')
         .then(r => r.json())
         .then(data => {
-            const items = Object.entries(data).map(([name, url]) => ({ name, meta: url }));
+            const items = Object.entries(data).map(([name, url]) => ({ name, url: url + '/', meta: url }));
             renderNodes(peersEl, items, 'No peers seen yet.');
         })
         .catch(() => {});
@@ -75,10 +80,35 @@ document.getElementById('talkNow').addEventListener('click', () => {
         .catch(() => {});
 });
 
+// ── Mission log ─────────────────────────────────────────────────────────
+const missionEl = document.getElementById('mission');
+
+function refreshMission() {
+    fetch('/mission')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('missionDay').textContent = `mission day ${data.day}`;
+            const entries = (data.entries || []).slice().reverse();
+            if (!entries.length) return;
+            let html = '', lastDay = null;
+            for (const e of entries) {
+                if (e.day !== lastDay) {
+                    html += `<div class="dayhead">DAY ${e.day}</div>`;
+                    lastDay = e.day;
+                }
+                const time = new Date(e.t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                html += `<div class="entry"><span class="time">${time}</span><span class="k-${esc(e.kind)}">${e.kind === 'note' ? `<b>${esc(e.who)}:</b> ` : ''}${esc(e.text)}</span></div>`;
+            }
+            missionEl.innerHTML = html;
+        })
+        .catch(() => {});
+}
+
 function refreshAll() {
     refreshRobots();
     refreshPeers();
     refreshTalk();
+    refreshMission();
 }
 
 refreshAll();

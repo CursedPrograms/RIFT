@@ -51,3 +51,7 @@ Unity App/RIFT/obj/
 Unity App/RIFT/Builds/
 Unity App/RIFT/*.csproj
 Unity App/RIFT/*.sln
+
+# The fleet mission diary (Fleet/mission.py) - local to each RIFT
+mission_log.json
+mission_log.json.tmp

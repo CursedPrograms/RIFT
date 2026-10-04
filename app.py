@@ -17,7 +17,7 @@ from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser
 
 from Fleet.register import start_fleet_authority
 from Fleet.internet_share import start_internet_share
-from Fleet import conversations
+from Fleet import conversations, mission
 
 app = Flask(__name__)
 
@@ -114,7 +114,7 @@ def robots():
 def _fleet_snapshot():
     _prune_fleet()
     with _fleet_lock:
-        return [{"name": n, "ip": m["ip"], "capabilities": m["capabilities"]} for n, m in _fleet.items()]
+        return [{"name": n, "ip": m["ip"], "type": m["type"], "capabilities": m["capabilities"]} for n, m in _fleet.items()]
 
 
 # ── Conversations ───────────────────────────────────────────────────────────
@@ -140,6 +140,72 @@ def talk_now():
         return jsonify({"error": "need two robots that can talk", "talkers": names}), 409
     threading.Thread(target=conversations.converse, args=(a, b, urls), daemon=True).start()
     return jsonify({"started": True, "from": a, "to": b})
+
+
+# ── Whole fleet, for the dashboard ──────────────────────────────────────────
+# Robots register with whichever registry is authority (usually NORA's), so
+# the dashboard merges RIFT's own roster, NORA's and NORA herself, each with
+# the address of its own web page: a "web:<port>" capability if it sends one,
+# else its usual port below.
+WEB_PORTS = {"NORA": 5002, "KIDA00": 5003, "KIDA01": 5004, "WHIP": 5005,
+             "COMCENTRE": 5009, "MILA": 5010, "ARM": 5011}
+HTTPS_ROBOTS = {"COMCENTRE"}   # DREAM serves HTTPS when it has a certificate
+
+
+def _web_url(name, ip, caps):
+    port = next((c[4:] for c in caps if c.startswith("web:") and c[4:].isdigit()), None)
+    port = port or WEB_PORTS.get(name.upper()) or next(
+        (c[5:] for c in caps if c.startswith("talk:") and c[5:].isdigit()), None)
+    if not port:
+        return None
+    scheme = "https" if name.upper() in HTTPS_ROBOTS else "http"
+    return f"{scheme}://{ip}:{port}/"
+
+
+def _whole_fleet():
+    nora = conversations._nora()
+    robots = {}
+    for r in _fleet_snapshot() + nora["roster"]:
+        caps = r.get("capabilities", [])
+        robots[r["name"]] = {"name": r["name"], "ip": r["ip"], "type": r.get("type", "robot"),
+                             "capabilities": caps, "url": _web_url(r["name"], r["ip"], caps)}
+    if nora["up"]:
+        robots["NORA"] = {"name": "NORA", "ip": conversations.NORA_HOST, "type": "mecanum",
+                          "capabilities": ["fleet_registry", "ir_link"], "url": _web_url("NORA", conversations.NORA_HOST, [])}
+    return sorted(robots.values(), key=lambda r: r["name"])
+
+
+@app.route("/fleet")
+def fleet():
+    return jsonify({"robots": _whole_fleet()})
+
+
+# ── Mission log ─────────────────────────────────────────────────────────────
+# GET /mission: the fleet's diary (Fleet/mission.py). POST /mission
+# {"who": "DREAM", "text": "..."} lets a robot write its own entry.
+
+@app.route("/mission")
+def mission_log():
+    return jsonify(mission.snapshot())
+
+
+@app.route("/mission", methods=["POST"])
+def mission_note():
+    data = request.get_json(silent=True) or request.form
+    who, text = (data.get("who") or "").strip(), (data.get("text") or "").strip()
+    if not who or not text:
+        return jsonify({"error": "need who and text"}), 400
+    mission.add(who[:24], text[:280], "note")
+    return jsonify({"ok": True})
+
+
+def _watch_fleet():
+    while True:
+        try:
+            mission.watch_roster(r["name"] for r in _whole_fleet())
+        except Exception as e:
+            print(f"[RIFT] mission watcher: {e}")
+        time.sleep(10)
 
 
 @app.route("/peers")
@@ -271,6 +337,8 @@ if __name__ == "__main__":
     print("[RIFT] Internet-share to NORA's AP started")
 
     conversations.start(_fleet_snapshot)
+    threading.Thread(target=_watch_fleet, daemon=True, name="mission-watcher").start()
+    print(f"[RIFT] Mission log: {mission.PATH} (day {mission.day()})")
     print("[RIFT] Fleet conversations started (Brainfuck chirps, see /talk)")
 
     try:
