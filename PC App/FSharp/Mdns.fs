@@ -1,7 +1,7 @@
 /// Zeroconf: publish this instance as _rift._tcp and watch for other RIFT
-/// instances and ComCentre (_flask-link._tcp). F# counterpart of app.py's
+/// instances and DREAM (_flask-link._tcp). F# counterpart of app.py's
 /// _start_zeroconf() / _PeerListener - browsing both is what lets DREAM show
-/// up in this dashboard without ComCentre knowing anything about RIFT.
+/// up in this dashboard without DREAM knowing anything about RIFT.
 module Rift.Mdns
 
 open System

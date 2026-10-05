@@ -18,13 +18,13 @@ function renderNodes(el, items, emptyText) {
 
 // Each robot's own web page: a web:<port> capability if it sent one, else
 // its usual port (same table as app.py's WEB_PORTS).
-const WEB_PORTS = { NORA: 5002, KIDA00: 5003, KIDA01: 5004, WHIP: 5005, DREAM: 5009, COMCENTRE: 5009, MILA: 5010, ARM: 5011, NINA: 5012 };
+const WEB_PORTS = { NORA: 5002, KIDA00: 5003, KIDA01: 5004, WHIP: 5005, DREAM: 5009, MILA: 5010, ARM: 5011, NINA: 5012 };
 function webUrl(r) {
     const caps = r.capabilities || [];
     const cap = prefix => (caps.find(c => c.startsWith(prefix) && /^\d+$/.test(c.slice(prefix.length))) || '').slice(prefix.length);
     const port = cap('web:') || WEB_PORTS[(r.name || '').toUpperCase()] || cap('talk:');
     if (!port) return null;
-    return `${['DREAM', 'COMCENTRE'].includes((r.name || '').toUpperCase()) ? 'https' : 'http'}://${r.ip}:${port}/`;
+    return `${(r.name || '').toUpperCase() === 'DREAM' ? 'https' : 'http'}://${r.ip}:${port}/`;
 }
 
 // The whole fleet with an Open button per robot. app.py serves /fleet (its

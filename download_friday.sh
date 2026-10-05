@@ -1,9 +1,9 @@
 #!/bin/bash
-# download_comcentre.sh
-# A script to download the ComCentre repository
+# download_friday.sh
+# A script to download the DREAM repository
 
 # Set the target directory (optional)
-TARGET_DIR="$HOME/ComCentre"
+TARGET_DIR="$HOME/DREAM"
 
 # Check if git is installed
 if ! command -v git &> /dev/null
@@ -18,8 +18,8 @@ if [ -d "$TARGET_DIR" ]; then
     cd "$TARGET_DIR"
     git pull
 else
-    echo "Cloning ComCentre into $TARGET_DIR..."
-    git clone https://github.com/CursedPrograms/ComCentre.git "$TARGET_DIR"
+    echo "Cloning DREAM into $TARGET_DIR..."
+    git clone https://github.com/CursedPrograms/DREAM.git "$TARGET_DIR"
 fi
 
 echo "Done!"
