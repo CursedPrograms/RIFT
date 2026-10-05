@@ -113,7 +113,7 @@
         <tbody>
           <tr><td>RIFT</td><td class="mono">5000</td><td>This fleet hub</td></tr>
           <tr><td>DREAM</td><td class="mono">5001</td><td>The AI companion: her own site, DREAM on your phone</td></tr>
-          <tr><td>ComCentre</td><td class="mono">5009</td><td>DREAM&rsquo;s dashboard and API (HTTPS)</td></tr>
+          <tr><td>DREAM</td><td class="mono">5009</td><td>DREAM&rsquo;s dashboard and API (HTTPS)</td></tr>
           <tr><td>NORA</td><td class="mono">5002</td><td>ESP32 mecanum robot and WiFi hub</td></tr>
           <tr><td>KIDA-00</td><td class="mono">5003</td><td>Raspberry Pi 3 tank</td></tr>
           <tr><td>KIDA-01</td><td class="mono">5004</td><td>Raspberry Pi 5 + Hailo tank</td></tr>
@@ -153,7 +153,7 @@
   <div class="wrap">
     <h2>Run</h2>
     <h3 class="title">Start the reference hub</h3>
-    <p class="muted"><code>app.py</code> runs the fleet registry, mDNS discovery (including browsing for ComCentre), the NORA integration threads, the conversations and the mission log in one Python process, with no compiling. On Windows <code>run.bat</code> does it all: it sets up <code>venv</code> and installs the requirements the first time, then starts <code>app.py</code>.</p>
+    <p class="muted"><code>app.py</code> runs the fleet registry, mDNS discovery (including browsing for DREAM), the NORA integration threads, the conversations and the mission log in one Python process, with no compiling. On Windows <code>run.bat</code> does it all: it sets up <code>venv</code> and installs the requirements the first time, then starts <code>app.py</code>.</p>
 <pre><span class="p">&gt;</span> run.bat</pre>
     <p class="muted">Or by hand (Linux / macOS):</p>
 <pre><span class="p">$</span> python3 -m venv venv

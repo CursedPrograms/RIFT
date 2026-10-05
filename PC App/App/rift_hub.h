@@ -161,8 +161,8 @@ private:
 
 // ---------------------------------------------------------------------
 // Zeroconf: publish this instance as _rift._tcp and watch for other RIFT
-// instances and ComCentre (_flask-link._tcp) - browsing both is what lets
-// DREAM show up in this dashboard without ComCentre knowing anything about
+// instances and DREAM (_flask-link._tcp) - browsing both is what lets
+// DREAM show up in this dashboard without DREAM knowing anything about
 // RIFT. A small responder + browser over multicast UDP (224.0.0.251:5353)
 // using just the DNS wire format: PTR (service -> instance), SRV (instance ->
 // host + port), TXT and A (host -> address). No Avahi/Bonjour needed, so it

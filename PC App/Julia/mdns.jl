@@ -1,7 +1,7 @@
 # mdns.jl - Zeroconf: publish this instance as _rift._tcp and watch for other
-# RIFT instances and ComCentre (_flask-link._tcp). Julia counterpart of app.py's
+# RIFT instances and DREAM (_flask-link._tcp). Julia counterpart of app.py's
 # _start_zeroconf() / _PeerListener - browsing both is what lets DREAM show up in
-# this dashboard without ComCentre knowing anything about RIFT.
+# this dashboard without DREAM knowing anything about RIFT.
 #
 # Julia has no mDNS package, so this is a small responder + browser over
 # multicast UDP (224.0.0.251:5353) using just the DNS wire format: PTR (service ->

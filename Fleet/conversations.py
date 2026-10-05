@@ -43,7 +43,8 @@ PERSONALITIES = {
     "MILA":      {"chattiness": 2, "likes": [5, 2, 0], "about": "playful little tank"},
     "WHIP":      {"chattiness": 1, "likes": [3, 0],    "about": "quiet, watchful hexapod"},
     "ARM":       {"chattiness": 1, "likes": [1, 2],    "about": "polite and precise"},
-    "COMCENTRE": {"chattiness": 2, "likes": [4, 1, 6], "about": "DREAM: deep, dreamy, a bit sleepy"},
+    "DREAM":     {"chattiness": 2, "likes": [4, 1, 6], "about": "DREAM: deep, dreamy, a bit sleepy"},
+    "COMCENTRE": {"chattiness": 2, "likes": [4, 1, 6], "about": "DREAM under her old name"},
 }
 DEFAULT_PERSONALITY = {"chattiness": 1, "likes": [0], "about": "new here"}
 

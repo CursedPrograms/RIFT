@@ -71,7 +71,7 @@ Core Features
 
 #### ESP32/Wi-Fi Network Communications:
 This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v00)
- as a central hub, while human devices like phones and PCs act as control interfaces. [DREAM/ComCentre](https://github.com/CursedPrograms/DREAM) can also assist with verbal communication between users and robots.
+ as a central hub, while human devices like phones and PCs act as control interfaces. [DREAM](https://github.com/CursedPrograms/DREAM) can also assist with verbal communication between users and robots.
 
 #### Supported Development & Runtime Environments
 - Microcontrollers: ESP32, Arduino IDE
@@ -82,7 +82,7 @@ This system uses [NORA-Robot-v00](https://github.com/CursedPrograms/NORA-Robot-v
 ```bash
 RIFT: :5000
 DREAM: :5001 (her own site - DREAM on your phone)
-ComCentre: :5009 (DREAM's dashboard and API, HTTPS)
+DREAM:     :5009 (DREAM's dashboard and API, HTTPS)
 NORA: :5002
 KIDA-00: :5003
 KIDA-01: :5004
@@ -103,7 +103,7 @@ RIFT has the robots chat: every 25–60 s it picks two that can talk and has the
 - **Log:** `GET /talk` returns the shared conversation log and moods (NORA's IR chats with IDA are merged in); `POST /talk` starts one now. The dashboard's **Conversations** section shows who said what, the program and what it prints.
 
 ## 📜 Mission log and the fleet page
-- **Fleet:** the dashboard lists every robot online - RIFT's own registry, NORA's (where most robots register) and NORA herself - each with an **Open** button for its own web page. The address comes from a `web:<port>` capability if the robot registers one, else its usual port (NORA 5002, KIDA00 5003, KIDA01 5004, WHIP 5005, DREAM/ComCentre 5009 over HTTPS, MILA 5010, ARM 5011). `GET /fleet` returns the same list as JSON.
+- **Fleet:** the dashboard lists every robot online - RIFT's own registry, NORA's (where most robots register) and NORA herself - each with an **Open** button for its own web page. The address comes from a `web:<port>` capability if the robot registers one, else its usual port (NORA 5002, KIDA00 5003, KIDA01 5004, WHIP 5005, DREAM 5009 over HTTPS, MILA 5010, ARM 5011). `GET /fleet` returns the same list as JSON.
 - **Mission log:** RIFT keeps the fleet's diary (`Fleet/mission.py`): who came online or went quiet, who said what to whom, whose mood changed, counted in mission days from the first entry. It's saved to `mission_log.json`, so the mission carries on across restarts. `GET /mission` returns it; a robot can write its own entry with `POST /mission {"who": "DREAM", "text": "..."}`.
 
 ## 📡 RIFT's own board (IR + buzzer)
@@ -139,7 +139,7 @@ pip install -r requirements.txt
 ```
 ### Run app.py for the Flask fleet dashboard
 
-Runs the fleet registry, mDNS discovery (including browsing for ComCentre),
+Runs the fleet registry, mDNS discovery (including browsing for DREAM),
 and the RIFT/NORA integration threads (fleet-authority heartbeat, internet
 share) all in one Python process — no compiling required.
 
@@ -196,7 +196,7 @@ g++ registration.cpp -o registration.exe -lcurl
 `app.py` is the reference fleet hub. `PC App/Go`, `PC App/Rust`, `PC App/FSharp` (.NET 8) and `PC App/Julia` are complete, cross-platform re-implementations of it - the same protocol on the same port `5000`, so run **one** hub per machine, whichever language you prefer. Each one has:
 
 - the fleet registry: `POST /register` (form body, or the JSON that `Android App/Registration.kt` sends), `GET /robots` (entries expire after 20 s without a heartbeat), `GET /ping`
-- `GET /peers`, plus mDNS publish/browse of `_rift._tcp` and ComCentre's `_flask-link._tcp`, so hubs (and DREAM) find each other
+- `GET /peers`, plus mDNS publish/browse of `_rift._tcp` and DREAM's `_flask-link._tcp`, so hubs (and DREAM) find each other
 - `GET`/`POST /mode`: the WiFi/Bluetooth connection mode, and the NORA fleet-authority heartbeat that goes with it (HTTP to `192.168.4.1:5000`, or `H<name>:<caps>` over a Bluetooth serial port)
 - the same dashboard: `templates/index.html` and `static/` are served as they are, no template engine needed
 - the NetworkManager internet share for NORA's AP (Linux only, like `Fleet/internet_share.py`)

@@ -34,11 +34,11 @@ THIS_PORT = 5000
 # heartbeats.
 FLEET_TTL_SECS = 20
 
-# RIFT's own mDNS service, plus ComCentre's — browsing both is what lets
-# DREAM show up in this dashboard without ComCentre needing to know
+# RIFT's own mDNS service, plus DREAM's dashboard's — browsing both is what lets
+# DREAM show up in this dashboard without DREAM needing to know
 # anything about RIFT's HTTP fleet registry below.
 RIFT_ZEROCONF_TYPE      = "_rift._tcp.local."
-COMCENTRE_ZEROCONF_TYPE = "_flask-link._tcp.local."
+DREAM_ZEROCONF_TYPE = "_flask-link._tcp.local."
 
 _fleet: dict[str, dict] = {}
 _fleet_lock = threading.Lock()
@@ -190,8 +190,8 @@ def talk_now():
 # the address of its own web page: a "web:<port>" capability if it sends one,
 # else its usual port below.
 WEB_PORTS = {"NORA": 5002, "KIDA00": 5003, "KIDA01": 5004, "WHIP": 5005,
-             "COMCENTRE": 5009, "MILA": 5010, "ARM": 5011, "NINA": 5012}
-HTTPS_ROBOTS = {"COMCENTRE"}   # DREAM serves HTTPS when it has a certificate
+             "DREAM": 5009, "COMCENTRE": 5009, "MILA": 5010, "ARM": 5011, "NINA": 5012}
+HTTPS_ROBOTS = {"DREAM", "COMCENTRE"}   # DREAM serves HTTPS when it has a certificate (COMCENTRE = her old name)
 
 
 def _web_url(name, ip, caps):
@@ -326,7 +326,7 @@ def set_mode():
         return jsonify({"mode": _transport_mode, "bt_port": _bt_port})
 
 
-# ── Zeroconf: publish self, watch for RIFT and ComCentre peers ─────────────
+# ── Zeroconf: publish self, watch for RIFT and DREAM peers ─────────────
 
 class _PeerListener:
     def remove_service(self, zc, type_, name):
@@ -359,7 +359,7 @@ def _start_zeroconf():
     zc.register_service(info)
     listener = _PeerListener()
     ServiceBrowser(zc, RIFT_ZEROCONF_TYPE, listener)
-    ServiceBrowser(zc, COMCENTRE_ZEROCONF_TYPE, listener)
+    ServiceBrowser(zc, DREAM_ZEROCONF_TYPE, listener)
     return zc, info
 
 
@@ -369,7 +369,7 @@ if __name__ == "__main__":
 
     _zc_instance, _zc_info = _start_zeroconf()
     print(f"[RIFT] Zeroconf registered as {THIS_NAME}; "
-          f"watching {RIFT_ZEROCONF_TYPE} and {COMCENTRE_ZEROCONF_TYPE}")
+          f"watching {RIFT_ZEROCONF_TYPE} and {DREAM_ZEROCONF_TYPE}")
 
     with _mode_lock:
         _restart_fleet_authority(_transport_mode)
