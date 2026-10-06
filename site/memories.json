@@ -1,0 +1,29 @@
+{
+  "_comment": "RIFT's fleet as a constellation: the robots and subsystems it coordinates, linked by how they actually talk. Edit as the fleet grows.",
+  "nodes": [
+    { "id": "rift",   "label": "RIFT",    "text": "Real-time Intelligent Fleet Technology — the hub every robot registers with.", "kind": "event", "weight": 1.0 },
+    { "id": "dream",  "label": "DREAM",   "text": "The command centre: a local AI with memory, mood and dreams.", "kind": "fleet", "weight": 0.95 },
+
+    { "id": "nora",   "label": "NORA",    "text": "Omnidirectional rover. Hosts the fleet WiFi AP and the ESP-NOW proximity mesh.", "kind": "fleet", "weight": 0.85 },
+    { "id": "mila",   "label": "MILA",    "text": "Miniature tracked bot. Joins NORA, falls back to her own AP.", "kind": "fleet", "weight": 0.7 },
+    { "id": "whip",   "label": "WHIP",    "text": "18-servo hexapod. Walks, and holds station in the fleet.", "kind": "fleet", "weight": 0.7 },
+    { "id": "kida0",  "label": "KIDA-00", "text": "KIDA v0 — dashboard and remote in the fleet HUD.", "kind": "fleet", "weight": 0.6 },
+    { "id": "kida1",  "label": "KIDA-01", "text": "KIDA v1 — avatar face, voice-overs, its own dashboard.", "kind": "fleet", "weight": 0.6 },
+    { "id": "ida",    "label": "IDA",     "text": "Driven by NORA over infrared (Samsung frames, address 0x0DA1).", "kind": "fleet", "weight": 0.55 },
+    { "id": "arm",    "label": "ARM",     "text": "Robotic arm with its own controller family.", "kind": "fleet", "weight": 0.5 },
+
+    { "id": "nina",   "label": "NINA",    "text": "Network Inspector & Notification Assistant — the fleet caretaker, watching health.", "kind": "event", "weight": 0.7 },
+    { "id": "radar",  "label": "Radar",   "text": "Imposter radar: robots flag any non-fleet WiFi they see.", "kind": "event", "weight": 0.5 },
+    { "id": "lock",   "label": "PIN 1234","text": "Controller lock: a phone must unlock with PIN 1234 to drive.", "kind": "event", "weight": 0.45 },
+    { "id": "log",    "label": "Mission log", "text": "RIFT's mission log — where the fleet records what happened.", "kind": "event", "weight": 0.5 }
+  ],
+  "links": [
+    ["rift", "dream"], ["rift", "nora"], ["rift", "mila"], ["rift", "whip"],
+    ["rift", "kida0"], ["rift", "kida1"], ["rift", "arm"], ["rift", "nina"],
+    ["dream", "nora"], ["dream", "kida0"], ["dream", "kida1"], ["dream", "log"],
+    ["nora", "mila"], ["nora", "whip"], ["nora", "ida"],
+    ["nina", "nora"], ["nina", "log"],
+    ["radar", "nora"], ["radar", "mila"], ["radar", "whip"],
+    ["lock", "nora"], ["lock", "mila"], ["lock", "whip"]
+  ]
+}

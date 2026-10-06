@@ -124,11 +124,39 @@ function refreshMission() {
         .catch(() => {});
 }
 
+// ── Who's near whom ──────────────────────────────────────────────────────
+// Each robot's own list (and RIFT's, over Bluetooth): zone, trend, what the
+// other robot says it's doing - decoded from its Brainfuck by RIFT - and
+// whether the robot is making way.
+const nearEl = document.getElementById('near');
+
+function nearLine(owner, st) {
+    const robots = (st.robots || []).map(r => {
+        const said = r.said ? ` says <code title="${esc(r.bf || '')}">${esc(r.said)}</code>` : (r.state ? ` (${esc(r.state)})` : '');
+        return `<span class="who">${esc(r.name)}</span> ${esc(r.zone)}, ${esc(r.trend || 'steady')}${said} <span class="via">${esc(r.via || '')} ${r.rssi} dBm</span>`;
+    }).join(' &middot; ');
+    const doing = st.yielding_to ? `making way for ${esc(st.yielding_to)}` : esc(st.advice || 'clear');
+    return `<div class="line"><span class="via">${esc(st.state || '')} &middot; ${doing}</span>
+        <span class="who">${esc(owner)}</span> hears: ${robots || '<span class="empty">nobody</span>'}</div>`;
+}
+
+function refreshNear() {
+    fetch('/near')
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(d => {
+            const parts = Object.entries(d.robots || {}).map(([name, st]) => nearLine(name, st));
+            if (d.rift && (d.rift.robots || []).length) parts.unshift(nearLine('RIFT', d.rift));
+            nearEl.innerHTML = parts.length ? parts.join('') : '<p class="empty">No robot reports anyone nearby yet.</p>';
+        })
+        .catch(() => {});
+}
+
 function refreshAll() {
     refreshRobots();
     refreshPeers();
     refreshTalk();
     refreshMission();
+    refreshNear();
 }
 
 refreshAll();

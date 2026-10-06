@@ -76,8 +76,9 @@ def compile_text(text):
     return code[2:] if code.startswith("><") else code   # don't step right just to step back
 
 
-def run_bf(code):
-    """Minimal interpreter, enough to check the generated programs."""
+def run_bf(code, max_steps=None):
+    """Minimal interpreter, enough to check the generated programs. max_steps
+    bounds it for programs heard over the air (Fleet/near_map.py)."""
     tape, ptr, ip, out, jump, stack = [0] * 64, 0, 0, [], {}, []
     for i, c in enumerate(code):
         if c == "[":
@@ -85,7 +86,11 @@ def run_bf(code):
         elif c == "]":
             j = stack.pop()
             jump[i], jump[j] = j, i
+    steps = 0
     while ip < len(code):
+        steps += 1
+        if max_steps is not None and steps > max_steps:
+            raise ValueError("Brainfuck program ran too long")
         c = code[ip]
         if c == ">": ptr += 1
         elif c == "<": ptr -= 1

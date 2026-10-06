@@ -20,6 +20,12 @@ from Fleet.internet_share import start_internet_share
 from Fleet import conversations, mission
 from Fleet.rift_board import RiftBoard
 from Fleet.bt_autopair import start_autopair
+from Fleet import near_map
+from Fleet.fleet_near import FleetNear
+
+# RIFT on Bluetooth LE: on a Pi it beacons as "RIFT" (a hub is always parked) and
+# hears the robots; on a PC it only listens. near_map adds every robot's own view.
+rift_near = FleetNear("RIFT", state="parked")
 
 # RIFT's own Arduino (arduino/rift_link): IR transmitter, receiver and buzzer.
 board = RiftBoard()
@@ -136,6 +142,14 @@ def talk_log():
 # GET /board/link?r=ida&c=fw    drive a robot over IR (same commands as NORA's /link)
 # GET /board/say?r=mila&p=0     beep a phrase, then send it to that robot over IR
 # GET /board/talk?u=7           beep a Brainfuck utterance (0-13) on RIFT's buzzer
+
+# ── Who's near whom ─────────────────────────────────────────────────────────
+# Every robot's /near (decoded: what they said in Brainfuck over ESP-NOW), plus
+# what RIFT itself hears over Bluetooth.
+@app.route("/near")
+def near_view():
+    return jsonify(near_map.collect(_whole_fleet(), rift_near))
+
 
 @app.route("/board")
 def board_status():
@@ -261,6 +275,12 @@ def index():
     return render_template("index.html", this_name=THIS_NAME, my_ip=MY_IP, this_port=THIS_PORT)
 
 
+@app.route("/cameras")
+def cameras():
+    # A live wall of every robot's camera feed, driven by the fleet roster.
+    return render_template("cameras.html", this_name=THIS_NAME, my_ip=MY_IP, this_port=THIS_PORT)
+
+
 # ── Colour scheme ───────────────────────────────────────────────────────────
 # colour_scheme.xml (repo root) as CSS variables, linked after styles.css, so
 # editing the XML restyles the dashboard with no CSS change. Read on every
@@ -381,6 +401,7 @@ if __name__ == "__main__":
     conversations.start(_fleet_snapshot)
     board.start()   # looks for its own Arduino after 25 s, on ports nobody else has open
     start_autopair()   # pairs with NORA (and any fleet robot) over Bluetooth; skips if there's no radio
+    rift_near.start()  # who's near RIFT over Bluetooth LE (needs bleak; beacons too on a Pi)
     threading.Thread(target=_watch_fleet, daemon=True, name="mission-watcher").start()
     print(f"[RIFT] Mission log: {mission.PATH} (day {mission.day()})")
     print("[RIFT] Fleet conversations started (Brainfuck chirps, see /talk)")

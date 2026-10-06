@@ -231,6 +231,37 @@ The same protocol (`/ping`, `/register`, `/robots`, `/peers`, `/mode`, dashboard
 
 Verified: the C++, Unity (C# on a desktop runtime with Unity stubs) and Android (core on a JVM) hubs pass the same 32-check protocol suite and interoperate over mDNS/heartbeat with the Go/Rust/F#/Julia hubs. Not run on real hardware: Linux-only code paths, Bluetooth, internet sharing, and the Android service/activity (`RiftAndroid.kt` was only compile-checked against an old android.jar, which lacks the API 26 calls).
 
+## 📡 Who's nearby (ESP-NOW + Bluetooth LE)
+
+Every robot sends a small **"I'm here"** beacon twice a second and listens for the others'. From the **signal strength** it knows roughly how close each one is, and from how that changes over time whether it's **coming closer, steady or leaving**:
+
+| Signal | Zone |
+| :--- | :--- |
+| above −45 dBm | very close |
+| −45 to −60 dBm | near |
+| −60 to −75 dBm | medium |
+| below −75 dBm | far |
+
+It's coarse (walls, bodies and antenna angle all change it): for "who's around", not distance. Precise collision avoidance stays with the ultrasonic and ToF sensors.
+
+**They tell each other what they're doing**, because a rising signal looks the same from both sides even when only one robot moves. Over ESP-NOW they say it **in Brainfuck**, like the fleet's conversations: each beacon carries a program that prints `park`, `go`, `wait` or `hand` (a human is driving), and the receiver runs it. Bluetooth adverts are too small for a program, so BLE carries the same state as one byte.
+
+**Who makes way**, in self-driving modes only:
+
+| The other robot... | So this one... |
+| :--- | :--- |
+| is parked | is the one closing in: steers away |
+| is yielding | carries on, carefully |
+| is driven by a human | makes way (it's unpredictable) |
+| drives itself | follows the alphabet: KIDA00, KIDA01, NORA, WHIP; everyone makes way for MILA, who can't hear the others |
+| is leaving | carries on |
+
+Making way = stop for 2 s, turn away, then drive on (and not yield again for 5 s, so two robots that stay close don't take turns forever). While another robot is near, or coming closer, it drives slower with wider margins.
+
+RIFT gathers every robot's `/near` into one picture at `GET /near` and the dashboard's **Who's near whom** section, and **decodes the Brainfuck** each robot heard over ESP-NOW (with `Fleet/brainfuck_talk.py`'s interpreter, step-limited so a garbled program can't hang it). On a Pi, RIFT also beacons over Bluetooth LE as `RIFT` (always parked) and hears the robots itself; on a PC it only listens. Code: `Fleet/near_map.py`, `Fleet/fleet_near.py`.
+
+---
+
 ## Screenshots
 
 <div align="center">

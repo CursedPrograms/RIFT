@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIFT — Fleet Cameras</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="/colour_scheme.css">
+    <style>
+      .cam-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+      .cam-head .meta { color: var(--text-sec); font-size: .9rem; }
+      .cam-head a.back { border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; color: var(--accent); text-decoration: none; }
+      .cam-head a.back:hover { background: var(--button-hover-bg); }
+
+      #camGrid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+      .cam {
+        background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+        display: flex; flex-direction: column;
+      }
+      .cam .bar { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+      .cam .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text-dim); flex: none; box-shadow: 0 0 6px transparent; }
+      .cam.live   .dot { background: var(--accent);  box-shadow: 0 0 8px var(--accent); }
+      .cam.off    .dot { background: #e5534b; box-shadow: 0 0 8px #e5534b; }
+      .cam .name { font-weight: 600; letter-spacing: .04em; }
+      .cam .type { color: var(--text-dim); font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; margin-left: auto; }
+      .cam .gear { background: none; border: 1px solid var(--border); color: var(--text-sec); border-radius: 6px;
+                   cursor: pointer; font-size: .8rem; padding: 3px 8px; }
+      .cam .gear:hover { color: var(--accent); border-color: var(--accent); }
+      .cam .view {
+        position: relative; aspect-ratio: 4 / 3; background: #05060a;
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+      }
+      .cam .view img { width: 100%; height: 100%; object-fit: cover; display: none; }
+      .cam.live .view img { display: block; }
+      .cam .ph { text-align: center; color: var(--text-dim); padding: 16px; font-size: .9rem; }
+      .cam .ph .big { font-size: 2rem; opacity: .5; display: block; margin-bottom: 6px; }
+      .cam .src { font-size: .72rem; color: var(--text-dim); padding: 7px 12px; border-top: 1px solid var(--border);
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #empty { color: var(--text-dim); padding: 40px 0; text-align: center; }
+    </style>
+</head>
+<body>
+    <img id="avatar" src="{{ url_for('static', filename='img/avatar.jpg') }}" alt="RIFT">
+    <h1>Fleet Cameras</h1>
+    <h2>RIFT &middot; live wall</h2>
+
+    <div class="cam-head">
+      <span class="meta" id="camMeta">Looking for robots…</span>
+      <a class="back" href="/">&larr; Dashboard</a>
+    </div>
+
+    <section>
+      <div id="camGrid"></div>
+      <div id="empty" style="display:none">No robots are registered with the fleet right now.</div>
+    </section>
+
+    <script src="{{ url_for('static', filename='js/cameras.js') }}"></script>
+</body>
+</html>

@@ -13,6 +13,7 @@
     <h1>RIFT</h1>
     <h2>Real-time Intelligent Fleet Technology</h2>
     <p id="self">{{ this_name }} &middot; {{ my_ip }}:{{ this_port }}</p>
+    <p style="margin-top:6px"><a href="/cameras" style="color:var(--accent);text-decoration:none;border:1px solid var(--border);border-radius:8px;padding:7px 14px">&#128247; Fleet Cameras</a></p>
 
     <section id="connMode">
         <h3>Connection Mode</h3>
@@ -30,6 +31,12 @@
     <section>
         <h3>Fleet</h3>
         <div id="robots" class="grid"><p class="empty">No robots online yet.</p></div>
+    </section>
+
+    <section id="nearSection">
+        <h3>Who's near whom</h3>
+        <p class="empty" style="margin:0 0 8px">From each robot's radios (ESP-NOW and Bluetooth LE). Over ESP-NOW they say what they're doing in Brainfuck; RIFT decodes it.</p>
+        <div id="near" class="talk"><p class="empty">No robot reports anyone nearby yet.</p></div>
     </section>
 
     <section id="talkSection">
