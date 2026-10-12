@@ -130,7 +130,8 @@ def _fleet_snapshot():
 
 # ── Conversations ───────────────────────────────────────────────────────────
 # The robots chatting in Brainfuck (Fleet/conversations.py): GET /talk is the
-# shared log + moods; POST /talk starts one now ({"from": .., "to": ..} optional).
+# shared log + moods; POST /talk starts one now ({"from": .., "to": ..} optional;
+# {"peer": true} for DREAM and KIDA-01: rock paper scissors, then words or Brainfuck).
 
 @app.route("/talk")
 def talk_log():
@@ -188,6 +189,13 @@ def talk_now():
     urls = conversations.talkers(_fleet_snapshot())
     a, b = data.get("from"), data.get("to")
     names = list(urls)
+    if data.get("peer"):   # two robots with minds: rock paper scissors, then words or Brainfuck
+        minds = conversations.peers(urls)
+        if len(minds) < 2:
+            return jsonify({"error": "need two robots with a mind (\"peer\" capability)", "peers": minds}), 409
+        a, b = (a, b) if a in minds and b in minds and a != b else minds[:2]
+        threading.Thread(target=conversations.peer_converse, args=(a, b, urls), daemon=True).start()
+        return jsonify({"started": True, "from": a, "to": b, "peer": True})
     if a not in urls:
         a = names[0] if names else None
     if b not in urls or b == a:

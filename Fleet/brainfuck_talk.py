@@ -7,6 +7,8 @@ travels over IR or WiFi; RIFT's log shows the program and what it prints.
 
 Utterances 0-6 are the phrases, 7-13 the matching replies:
     0 hello  1 how are you  2 happy  3 curious  4 sleepy  5 let's play  6 bye
+and 14-16 the rock-paper-scissors moves (R, P, S) for the robots' games
+(Fleet/conversations.py's rps()).
 
 Run this after changing PHRASES. It writes the same talk_bf.h into every
 robot sketch it finds next to this repo (and Fleet/talk_bf.json for RIFT),
@@ -31,6 +33,13 @@ PHRASES = [
     ("bye",         "bye",  "bye!"),
 ]
 
+# Rock paper scissors: (name, what it prints), utterances 14-16.
+MOVES = [
+    ("rock",     "R"),
+    ("paper",    "P"),
+    ("scissors", "S"),
+]
+
 # Sketches that speak or log the phrases (relative to the GitHub folder).
 SKETCHES = [
     "NORA-Robot-v00/scripts/arduino",
@@ -39,6 +48,7 @@ SKETCHES = [
     "MILA/scripts/MILA",
     "KIDA-Robot-v01/scripts/arduino/arduino00",
     "DREAM/dream_sensors",
+    "Friday/dream_sensors",        # DREAM's repo, when it's checked out under its old name
     "ARM-Robot-v01/scripts/arm",
     "RIFT/arduino/rift_link",
 ]
@@ -104,12 +114,14 @@ def run_bf(code, max_steps=None):
 
 
 def utterances():
-    """[(index, name, kind, text, code)] - phrases 0-6 then replies 7-13."""
+    """[(index, name, kind, text, code)] - phrases 0-6, replies 7-13, moves 14-16."""
     out = []
     for i, (name, said, reply) in enumerate(PHRASES):
         out.append((i, name, "phrase", said, compile_text(said)))
     for i, (name, said, reply) in enumerate(PHRASES):
         out.append((7 + i, name, "reply", reply, compile_text(reply)))
+    for i, (name, text) in enumerate(MOVES):
+        out.append((2 * len(PHRASES) + i, name, "move", text, compile_text(text)))
     for idx, name, kind, text, code in out:
         assert run_bf(code) == text, (idx, code)
     return out
@@ -128,10 +140,11 @@ def header(utts):
         "// by beeping the source, one tone per symbol (bfToneHz/bfToneMs), scaled to",
         "// its own voice. Utterances 0-6 are phrases, 7-13 the matching replies:",
         "// 0 hello, 1 how are you, 2 happy, 3 curious, 4 sleepy, 5 let's play, 6 bye.",
+        "// 14-16 are rock, paper, scissors (R, P, S) for the robots' games.",
         "#pragma once",
         "#include <Arduino.h>",
         "",
-        "#define TALK_UTTERANCES 14",
+        "#define TALK_UTTERANCES %d" % len(utts),
         "#define TALK_GAP_MS %d" % GAP_MS,
         "",
     ]

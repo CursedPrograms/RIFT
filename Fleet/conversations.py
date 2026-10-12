@@ -11,6 +11,13 @@ Each robot has a personality (how chatty it is, what it likes to say) and a
 mood that drifts with the time of day and how its last chats went. NORA's own
 IR chats with IDA (her /talk log) are merged in, so the dashboard shows the
 whole fleet's conversation in one place.
+
+Robots with a mind (DREAM, KIDA-01: they register a "peer" capability, see
+their peer_talk.py) get real conversations with each other whenever both say
+they're free (nobody is with them): RIFT referees a game of rock paper
+scissors (both beep their move, utterances 14-16), the winner picks words or
+Brainfuck, and RIFT relays a few turns between them. They still chirp with the
+rest of the fleet as before.
 """
 import json
 import os
@@ -18,7 +25,9 @@ import random
 import ssl
 import threading
 import time
+import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 from Fleet import mission
 
@@ -28,7 +37,13 @@ NORA_FLEET_PORT = 5000   # her fleet registry (/robots)
 NORA_API_PORT = 5002     # her robot API (/chirp, /talk)
 
 with open(os.path.join(HERE, "talk_bf.json"), encoding="utf-8") as f:
-    UTTERANCES = json.load(f)   # [{"index", "name", "kind", "text", "bf"}], 0-6 phrases, 7-13 replies
+    UTTERANCES = json.load(f)   # [{"index", "name", "kind", "text", "bf"}], 0-6 phrases, 7-13 replies, 14-16 moves
+
+MOVES = ["rock", "paper", "scissors"]          # utterances 14-16
+BEATS = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
+PEER_TURNS = (4, 8)          # lines in a peer conversation (even, so both get to say goodbye)
+PEER_GAP_S = (60, 180)       # between two peer conversations, while they're both free
+PEER_SAY_TIMEOUT_S = 180     # one line: the LLM thinking, then DREAM's lip-sync rendering
 
 # Mirrors brainfuck_talk.py's tone lengths: how long saying u takes.
 def say_seconds(u):
@@ -109,6 +124,26 @@ def _get(url, timeout=3):
     return None
 
 
+def _request_json(url, payload=None, timeout=5):
+    """GET (or POST payload as JSON to) url; the JSON answer, or None. 409 answers
+    (a robot that has become busy) still come back as JSON."""
+    for u in (url, url.replace("http://", "https://", 1)):
+        ctx = ssl._create_unverified_context() if u.startswith("https") else None
+        data = json.dumps(payload).encode() if payload is not None else None
+        req = urllib.request.Request(u, data=data, headers={"Content-Type": "application/json"} if data else {})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout, context=ctx) as r:
+                return json.loads(r.read() or b"null")
+        except urllib.error.HTTPError as e:
+            try:
+                return json.loads(e.read() or b"null")
+            except ValueError:
+                return None
+        except Exception:
+            continue
+    return None
+
+
 def _record(entry):
     with _log_lock:
         _log.append(entry)
@@ -132,6 +167,9 @@ def _nora():
     return _nora_cache
 
 
+_peer_caps = set()   # names of the robots that registered "peer" (a mind of their own)
+
+
 def talkers(fleet_snapshot):
     """{name: base_url} of every robot that can talk right now: RIFT's own
     registry, NORA's registry, and NORA herself."""
@@ -143,6 +181,8 @@ def talkers(fleet_snapshot):
             for cap in r.get("capabilities", []):
                 if cap.startswith("talk:") and cap[5:].isdigit():
                     found[r["name"]] = f"http://{r['ip']}:{cap[5:]}"
+                elif cap == "peer":
+                    _peer_caps.add(r["name"])
     if nora["up"]:
         found["NORA"] = f"http://{NORA_HOST}:{NORA_API_PORT}"
     return found
@@ -169,6 +209,124 @@ def converse(a, b, urls, phrase=None):
     _nudge_mood(a, 0.15 if ok_b else -0.15)
     _nudge_mood(b, 0.1 if ok_b else 0)
     return ok_b
+
+
+# ---- robots with minds: rock paper scissors, then words or Brainfuck
+
+_in_session = set()   # robots in a peer conversation right now - kept out of the chirping
+_peer_state = {"next": 0.0}
+
+
+def peers(urls):
+    """The robots that can talk that also have a mind."""
+    return [n for n in urls if n in _peer_caps]
+
+
+def free(name, urls):
+    """(free?, why not, their mind snapshot) from the robot's GET /peer."""
+    st = _request_json(f"{urls[name]}/peer", timeout=4)
+    if not st:
+        return False, "no answer", {}
+    return bool(st.get("available")), st.get("reason", ""), st.get("mind") or {}
+
+
+def rps(a, b, urls):
+    """Rock paper scissors between a and b, refereed here. Both are asked at once, so
+    neither can see the other's move, and both beep it. Ties go again (three times,
+    then a coin decides). Returns the winner."""
+    for _ in range(3):
+        with ThreadPoolExecutor(2) as ex:
+            answers = list(ex.map(lambda n: _request_json(f"{urls[n]}/peer/rps", timeout=5), (a, b)))
+        moves = {}
+        for n, ans in zip((a, b), answers):
+            m = (ans or {}).get("move")
+            moves[n] = m if m in MOVES else random.choice(MOVES)
+        with ThreadPoolExecutor(2) as ex:            # both throw at once
+            list(ex.map(lambda n: _get(f"{urls[n]}/chirp?u={14 + MOVES.index(moves[n])}"), (a, b)))
+        for n, other in ((a, b), (b, a)):
+            u = 14 + MOVES.index(moves[n])
+            _record({"t": time.time(), "from": n, "to": other, "u": u, "said": moves[n], "kind": "move",
+                     "text": moves[n], "bf": UTTERANCES[u]["bf"], "via": "wifi", "ok": True})
+        time.sleep(1.5)
+        if moves[a] != moves[b]:
+            winner = a if BEATS[moves[a]] == moves[b] else b
+            loser = b if winner == a else a
+            mission.add(winner, f"{winner}'s {moves[winner]} beat {loser}'s {moves[loser]}.", "chat")
+            return winner
+    return random.choice((a, b))
+
+
+def peer_converse(a, b, urls):
+    """A real conversation between two robots with minds. Returns True if it happened."""
+    snaps = {}
+    for n in (a, b):
+        ok, why, snap = free(n, urls)
+        if not ok:
+            print(f"[RIFT] {n} can't chat with {b if n == a else a} now: {why}")
+            return False
+        snaps[n] = snap
+    _in_session.update((a, b))
+    try:
+        winner = rps(a, b, urls)
+        other = b if winner == a else a
+        mode = (_request_json(f"{urls[winner]}/peer/choose", timeout=5) or {}).get("talk")
+        mode = mode if mode in ("words", "brainfuck") else random.choice(["words", "brainfuck"])
+        how = "out loud" if mode == "words" else "in Brainfuck"
+        _record({"t": time.time(), "from": winner, "to": other, "u": None, "said": mode, "kind": "decision",
+                 "text": f"won rock paper scissors and wants to talk {how}", "bf": "", "via": "wifi", "ok": True})
+        mission.add(winner, f"{winner} won rock paper scissors and chose to talk with {other} {how}.", "chat")
+
+        turns = random.randrange(PEER_TURNS[0], PEER_TURNS[1] + 1, 2)
+        last = {"text": "", "u": None, "mind": snaps[other]}
+        speakers = [winner, other]
+        said = 0
+        for i in range(turns):
+            me, them = speakers[i % 2], speakers[(i + 1) % 2]
+            msg = {"from": them, "mode": mode, "text": last["text"], "u": last["u"],
+                   "mind": last["mind"] if i else snaps[them], "opening": i < 2, "closing": i >= turns - 2}
+            ans = _request_json(f"{urls[me]}/peer/say", msg, timeout=PEER_SAY_TIMEOUT_S)
+            if not ans or not ans.get("ok"):
+                why = (ans or {}).get("reason") or "no answer"
+                _record({"t": time.time(), "from": me, "to": them, "u": None, "said": None, "kind": "note",
+                         "text": f"stopped talking ({why})", "bf": "", "via": "wifi", "ok": False})
+                if mode == "brainfuck":
+                    _get(f"{urls[them]}/chirp?u=6")      # the other one says bye anyway
+                break
+            u = ans.get("u")
+            bf = UTTERANCES[u]["bf"] if isinstance(u, int) and 0 <= u < len(UTTERANCES) else ""
+            kind = "words" if mode == "words" else ("reply" if isinstance(u, int) and 7 <= u < 14 else "phrase")
+            _record({"t": time.time(), "from": me, "to": them, "u": u, "said": ans.get("text"), "kind": kind,
+                     "text": ans.get("text", ""), "bf": bf, "via": "wifi", "ok": True})
+            said += 1
+            last = {"text": ans.get("text", ""), "u": u, "mind": ans.get("mind") or {}}
+            time.sleep((say_seconds(u) if bf else (ans.get("seconds") or 0)) + 0.8)
+        if said:
+            mission.add(a, f"{a} and {b} talked {how} ({said} lines).", "chat")
+            _nudge_mood(a, 0.1 * min(said, 4) / 4)
+            _nudge_mood(b, 0.1 * min(said, 4) / 4)
+        return said > 0
+    finally:
+        _in_session.difference_update((a, b))
+
+
+def maybe_peer_chat(urls):
+    """If two robots with minds are free, start them talking (on its own thread: a
+    conversation takes minutes). Tries again every PEER_GAP_S while they stay free."""
+    if _in_session or time.time() < _peer_state["next"]:
+        return
+    names = peers(urls)
+    if len(names) < 2:
+        return
+    a, b = random.sample(names, 2)
+    _peer_state["next"] = time.time() + 30          # not free: look again in half a minute
+
+    def run():
+        try:
+            if peer_converse(a, b, urls):
+                _peer_state["next"] = time.time() + random.uniform(*PEER_GAP_S)
+        except Exception as e:
+            print(f"[RIFT] peer conversation error: {e}")
+    threading.Thread(target=run, daemon=True, name="peer-conversation").start()
 
 
 _nora_seen_ms = set()
@@ -213,8 +371,10 @@ def start(get_fleet_snapshot, min_gap=25, max_gap=60):
         while True:
             try:
                 merge_nora_ir_log()
+                urls = talkers(get_fleet_snapshot())
+                maybe_peer_chat(urls)
                 if time.time() >= next_chat:
-                    urls = talkers(get_fleet_snapshot())
+                    urls = {n: u for n, u in urls.items() if n not in _in_session}
                     if len(urls) >= 2:
                         names = list(urls)
                         weights = [_personality(n)["chattiness"] for n in names]
