@@ -99,16 +99,48 @@ def _nudge_mood(name, by):
         mission.add(name, f"{name} is feeling {after} now.", "mood")
 
 
-def _pick_phrase(name):
-    """What `name` feels like saying: its favourites, coloured by its mood."""
+HELLO, HOW, HAPPY, CURIOUS, SLEEPY, PLAY, BYE = range(7)
+GREET_GAP_S = 30 * 60   # apart this long, two robots say hello again before anything else
+BYE_REST_S = 10 * 60    # after goodbye, a pair leaves each other alone this long
+BYE_AFTER = 3           # phrases in a visit before either may say goodbye
+_visits = {}            # frozenset({a, b}) -> {"said": [u, ...], "last": t, "bye": t or 0}
+
+
+def _visit(a, b):
+    """The pair's current visit: what's been said since they last said hello. A new one
+    starts when they've been apart GREET_GAP_S, or rested after saying goodbye."""
+    key, now = frozenset((a, b)), time.time()
+    v = _visits.get(key)
+    if v is None or now - v["last"] > GREET_GAP_S or (v["bye"] and now - v["bye"] > BYE_REST_S):
+        v = _visits[key] = {"said": [], "last": now, "bye": 0}
+    return v
+
+
+def resting(a, b):
+    """They said goodbye a moment ago: don't start them up again yet."""
+    v = _visits.get(frozenset((a, b)))
+    return bool(v and v["bye"] and time.time() - v["bye"] < BYE_REST_S)
+
+
+def _pick_phrase(name, other):
+    """What `name` says to `other`: hello first, "how are you" soon after, then its
+    favourites coloured by its mood - not what was just said, not sleepy on a bright
+    day, and goodbye only once they've talked a while."""
+    said = _visit(name, other)["said"]
+    if not said:
+        return HELLO
     mood = _mood(name)
     weights = [1.0] * 7
     for p in _personality(name)["likes"]:
         weights[p] += 2.0
-    weights[2] += 2 * max(mood, 0)    # happy
-    weights[5] += 2 * max(mood, 0)    # let's play
-    weights[4] += 3 * max(-mood, 0)   # sleepy
-    weights[6] += 1 * max(-mood, 0)   # bye
+    weights[HAPPY] += 2 * max(mood, 0)
+    weights[PLAY] += 2 * max(mood, 0)
+    weights[SLEEPY] = 3 * max(-mood, 0) + (0.2 if mood < 0.1 else 0)
+    weights[HELLO] = 0                                     # they've greeted already
+    weights[HOW] = 0 if HOW in said else weights[HOW] + (3 if len(said) == 1 else 0)
+    weights[BYE] = 0 if len(said) < BYE_AFTER else 0.4 + 0.3 * len(said) + 2 * max(-mood, 0)
+    for u in said[-3:]:                                    # don't repeat what was just said
+        weights[u] *= 0.15
     return random.choices(range(7), weights=weights)[0]
 
 
@@ -190,8 +222,14 @@ def talkers(fleet_snapshot):
 
 def converse(a, b, urls, phrase=None):
     """a says a phrase to b and b answers. Logs both. Returns True if both spoke."""
-    p = _pick_phrase(a) if phrase is None else phrase
+    p = _pick_phrase(a, b) if phrase is None else phrase
     ok_a = _get(f"{urls[a]}/chirp?u={p}") is not None
+    if ok_a:                               # the visit remembers what was actually said
+        v = _visit(a, b)
+        v["said"].append(p)
+        v["last"] = time.time()
+        if p == BYE:
+            v["bye"] = time.time()
     _record({"t": time.time(), "from": a, "to": b, "u": p, "said": UTTERANCES[p]["name"], "kind": "phrase",
              "text": UTTERANCES[p]["text"], "bf": UTTERANCES[p]["bf"], "via": "wifi", "ok": ok_a})
     if not ok_a:
@@ -379,8 +417,9 @@ def start(get_fleet_snapshot, min_gap=25, max_gap=60):
                         names = list(urls)
                         weights = [_personality(n)["chattiness"] for n in names]
                         a = random.choices(names, weights=weights)[0]
-                        b = random.choice([n for n in names if n != a])
-                        converse(a, b, urls)
+                        others = [n for n in names if n != a and not resting(a, n)]
+                        if others:
+                            converse(a, random.choice(others), urls)
                     next_chat = time.time() + random.uniform(min_gap, max_gap)
             except Exception as e:   # never let one bad robot stop the chatter
                 print(f"[RIFT] conversation error: {e}")
