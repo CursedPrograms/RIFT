@@ -220,6 +220,24 @@ def talkers(fleet_snapshot):
     return found
 
 
+# Their programs play a startup sound: nobody talks to them until it's over.
+STARTUP_QUIET_S = {"KIDA": 12, "NORA": 12}    # name prefix -> seconds online first (KIDA00, KIDA01)
+_online_since = {}
+
+
+def settled(urls):
+    """The talkers that have been online long enough to chat. One that drops out
+    and comes back waits again."""
+    now = time.time()
+    for n in list(_online_since):
+        if n not in urls:
+            del _online_since[n]
+    for n in urls:
+        _online_since.setdefault(n, now)
+    return {n: u for n, u in urls.items()
+            if now - _online_since[n] >= next((s for k, s in STARTUP_QUIET_S.items() if n.upper().startswith(k)), 0)}
+
+
 def converse(a, b, urls, phrase=None):
     """a says a phrase to b and b answers. Logs both. Returns True if both spoke."""
     p = _pick_phrase(a, b) if phrase is None else phrase
@@ -409,7 +427,7 @@ def start(get_fleet_snapshot, min_gap=25, max_gap=60):
         while True:
             try:
                 merge_nora_ir_log()
-                urls = talkers(get_fleet_snapshot())
+                urls = settled(talkers(get_fleet_snapshot()))
                 maybe_peer_chat(urls)
                 if time.time() >= next_chat:
                     urls = {n: u for n, u in urls.items() if n not in _in_session}
