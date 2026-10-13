@@ -17,7 +17,7 @@ from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser
 
 from Fleet.register import start_fleet_authority
 from Fleet.internet_share import start_internet_share
-from Fleet import conversations, mission
+from Fleet import conversations, mission, music
 from Fleet.rift_board import RiftBoard
 from Fleet.bt_autopair import start_autopair
 from Fleet import near_map
@@ -136,6 +136,29 @@ def _fleet_snapshot():
 @app.route("/talk")
 def talk_log():
     return jsonify(conversations.snapshot())
+
+
+# ── Music together (Fleet/music.py) ─────────────────────────────────────────
+# GET /clock     RIFT's time: players set their clocks by it
+# GET /music     who can play, and the last command
+# POST /music    {"action": "play" | "pause" | "resume" | "stop", "track": 100}
+
+@app.route("/clock")
+def clock():
+    return jsonify({"t": time.time()})
+
+
+@app.route("/music")
+def music_status():
+    return jsonify(music.snapshot(_whole_fleet()))
+
+
+@app.route("/music", methods=["POST"])
+def music_now():
+    data = request.get_json(silent=True) or {}
+    track = data.get("track")
+    out = music.conduct(_whole_fleet(), str(data.get("action", "")), int(track) if str(track).isdigit() else None)
+    return jsonify(out), 200 if out.get("ok") else 400
 
 
 # ── RIFT's own board: IR + buzzer ───────────────────────────────────────────

@@ -162,6 +162,8 @@
         <p>A robot that answers with 409 &mdash; TINA while she&rsquo;s working &mdash; is noted as busy and left alone for a minute, instead of &ldquo;no answer&rdquo;.</p>
       </div>
     </div>
+    <h3 class="sub">Music together</h3>
+    <p class="muted">RIFT conducts: <code>POST /music {"action": "play", "track": 100}</code> and every player starts the same song at the same moment. RIFT sets the start 4&nbsp;s ahead on its own clock; each player sets its clock by RIFT&rsquo;s (<code>GET /clock</code>), loads the song and starts exactly then, so a slow network doesn&rsquo;t put them out of step. TINA plays along now; KIDA00, KIDA01 and NORA are next. Tracks are numbered as on NORA&rsquo;s SD card.</p>
     <p class="muted">With another robot that has a mind (DREAM, KIDA-01, TINA), RIFT holds a <strong>real conversation</strong> when nobody is using them: rock paper scissors, then the winner picks words or Brainfuck (<code>peer_talk.py</code>). In Brainfuck the chat opens with hello and only says goodbye at the end.</p>
     <p class="muted spaced"><code>GET /talk</code> returns the conversation log and moods, <code>POST /talk</code> starts one now, <code>GET /mission</code> returns the diary. The dashboard shows both, and every robot in its Fleet list has an <strong>Open</strong> button for its own web page.</p>
   </div>

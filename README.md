@@ -106,6 +106,14 @@ RIFT has the robots chat: every 25–60 s it picks two that can talk and has the
 - **Real conversations:** robots with a mind (DREAM, KIDA-01, TINA register `peer`) play rock paper scissors, and the winner picks words or Brainfuck (`peer_talk.py`); RIFT relays the turns.
 - **Log:** `GET /talk` returns the shared conversation log and moods (NORA's IR chats with IDA are merged in); `POST /talk` starts one now. The dashboard's **Conversations** section shows who said what, the program and what it prints.
 
+## 🎵 Music together
+
+RIFT conducts: `POST /music {"action": "play", "track": 100}` and every player starts the same song at the same moment. RIFT picks a start 4 s ahead on its own clock and sends each player `POST /music {"action", "track", "at"}`. Each player sets its clock by RIFT's (`GET /clock`), loads the song, and starts exactly then, so a slow network doesn't put them out of step. `pause`, `resume` and `stop` work the same way, and `GET /music` lists the players and the last command.
+
+- **Players** register the capability `music:<port>`. TINA plays along now (started 0.4 ms after the set moment in the first test); KIDA00, KIDA01 and NORA are next.
+- **Tracks** are numbered the same everywhere: the number in the file name, as on NORA's SD card (`NORA-Robot-v00/music`: `Track000.mp3`, `Track100.mp3`, ...).
+- Code: `Fleet/music.py`.
+
 ## 📜 Mission log and the fleet page
 - **Fleet:** the dashboard lists every robot online - RIFT's own registry, NORA's (where most robots register) and NORA herself - each with an **Open** button for its own web page. The address comes from a `web:<port>` capability if the robot registers one, else its usual port (NORA 5002, KIDA00 5003, KIDA01 5004, WHIP 5005, DREAM 5009 over HTTPS, MILA 5010, ARM 5011). `GET /fleet` returns the same list as JSON.
 - **Mission log:** RIFT keeps the fleet's diary (`Fleet/mission.py`): who came online or went quiet, who said what to whom, whose mood changed, counted in mission days from the first entry. It's saved to `mission_log.json`, so the mission carries on across restarts. `GET /mission` returns it; a robot can write its own entry with `POST /mission {"who": "DREAM", "text": "..."}`.
