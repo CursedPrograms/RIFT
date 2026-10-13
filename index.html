@@ -148,6 +148,21 @@
         <p>A diary in mission days: who came online or went quiet, who said what to whom, whose mood changed. Robots can add entries with <code>POST /mission</code>.</p>
       </div>
     </div>
+    <div class="grid cols-3">
+      <div class="card">
+        <h4>Hello first, goodbye last</h4>
+        <p>Each pair has a visit: hello first, &ldquo;how are you&rdquo; soon after, nothing repeated, goodbye only after a few exchanges &mdash; then ten minutes&rsquo; rest.</p>
+      </div>
+      <div class="card">
+        <h4>Startup sounds</h4>
+        <p>KIDA00, KIDA01 and NORA play a sound when they start, so nobody talks to them until they&rsquo;ve been online 12&nbsp;s.</p>
+      </div>
+      <div class="card">
+        <h4>Busy is busy</h4>
+        <p>A robot that answers with 409 &mdash; TINA while she&rsquo;s working &mdash; is noted as busy and left alone for a minute, instead of &ldquo;no answer&rdquo;.</p>
+      </div>
+    </div>
+    <p class="muted">With another robot that has a mind (DREAM, KIDA-01, TINA), RIFT holds a <strong>real conversation</strong> when nobody is using them: rock paper scissors, then the winner picks words or Brainfuck (<code>peer_talk.py</code>). In Brainfuck the chat opens with hello and only says goodbye at the end.</p>
     <p class="muted spaced"><code>GET /talk</code> returns the conversation log and moods, <code>POST /talk</code> starts one now, <code>GET /mission</code> returns the diary. The dashboard shows both, and every robot in its Fleet list has an <strong>Open</strong> button for its own web page.</p>
   </div>
 </section>

@@ -100,6 +100,10 @@ RIFT has the robots chat: every 25–60 s it picks two that can talk and has the
 - **Phrasebook:** `Fleet/brainfuck_talk.py` builds the shortest program it can for each phrase (0–6: hello, how are you, happy, curious, sleepy, let's play, bye) and reply (7–13), checks each with an interpreter, and writes the same `talk_bf.h` into every robot's sketch plus `Fleet/talk_bf.json`. Edit `PHRASES` and rerun it to change what they say.
 - **Who talks:** robots that register a `talk:<port>` capability (with RIFT or NORA) and NORA herself; RIFT asks them with `GET /chirp?u=<0-13>`.
 - **Personalities and moods:** each robot has its own chattiness and favourite phrases (`Fleet/conversations.py`), and a mood that drifts with the time of day and how its chats go - bright robots suggest playing, sleepy ones yawn.
+- **With context:** each pair of robots has a visit. They say hello first (again after half an hour apart), usually ask how the other is next, don't repeat what was just said, and only say goodbye after a few exchanges - then leave each other alone for 10 minutes.
+- **Startup sounds:** KIDA00, KIDA01 and NORA play a sound when their programs start, so nobody talks to them until they've been online 12 s (`STARTUP_QUIET_S`). A robot that drops out and comes back waits again.
+- **Busy is busy:** a robot that answers `/chirp` with 409 (TINA while she's working, or just after you used her) is noted as busy and left out for a minute - not logged as "no answer", and nobody's mood drops.
+- **Real conversations:** robots with a mind (DREAM, KIDA-01, TINA register `peer`) play rock paper scissors, and the winner picks words or Brainfuck (`peer_talk.py`); RIFT relays the turns.
 - **Log:** `GET /talk` returns the shared conversation log and moods (NORA's IR chats with IDA are merged in); `POST /talk` starts one now. The dashboard's **Conversations** section shows who said what, the program and what it prints.
 
 ## 📜 Mission log and the fleet page
