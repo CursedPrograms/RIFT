@@ -238,10 +238,43 @@ def settled(urls):
             if now - _online_since[n] >= next((s for k, s in STARTUP_QUIET_S.items() if n.upper().startswith(k)), 0)}
 
 
+BUSY_REST_S = 60     # a robot that said it's busy (409) is left out of the chatter this long
+_busy_until = {}
+
+
+def _chirp(url):
+    """True: said it. "busy": the robot declined (409 - TINA while she's working or
+    in use). False: no answer at all."""
+    for u in (url, url.replace("http://", "https://", 1)):
+        try:
+            ctx = ssl._create_unverified_context() if u.startswith("https") else None
+            with urllib.request.urlopen(u, timeout=3, context=ctx):
+                return True
+        except urllib.error.HTTPError as e:
+            return "busy" if e.code == 409 else False
+        except Exception:
+            continue
+    return False
+
+
+def busy(name):
+    return time.time() < _busy_until.get(name, 0)
+
+
+def _declined(who, to):
+    """who is busy: a quiet note, a minute's rest from the chatter, no hard feelings."""
+    _busy_until[who] = time.time() + BUSY_REST_S
+    _record({"t": time.time(), "from": who, "to": to, "u": None, "said": None, "kind": "note",
+             "text": "is busy right now", "bf": "", "via": "wifi", "ok": True})
+
+
 def converse(a, b, urls, phrase=None):
     """a says a phrase to b and b answers. Logs both. Returns True if both spoke."""
     p = _pick_phrase(a, b) if phrase is None else phrase
-    ok_a = _get(f"{urls[a]}/chirp?u={p}") is not None
+    ok_a = _chirp(f"{urls[a]}/chirp?u={p}")
+    if ok_a == "busy":
+        _declined(a, b)
+        return False
     if ok_a:                               # the visit remembers what was actually said
         v = _visit(a, b)
         v["said"].append(p)
@@ -255,7 +288,10 @@ def converse(a, b, urls, phrase=None):
         return False
     time.sleep(say_seconds(p) + 0.6)   # let a finish before b answers
     r = 7 + p
-    ok_b = _get(f"{urls[b]}/chirp?u={r}") is not None
+    ok_b = _chirp(f"{urls[b]}/chirp?u={r}")
+    if ok_b == "busy":
+        _declined(b, a)
+        return False
     _record({"t": time.time(), "from": b, "to": a, "u": r, "said": UTTERANCES[r]["name"], "kind": "reply",
              "text": UTTERANCES[r]["text"], "bf": UTTERANCES[r]["bf"], "via": "wifi", "ok": ok_b})
     said, reply = UTTERANCES[p]["text"], UTTERANCES[r]["text"]
@@ -430,7 +466,7 @@ def start(get_fleet_snapshot, min_gap=25, max_gap=60):
                 urls = settled(talkers(get_fleet_snapshot()))
                 maybe_peer_chat(urls)
                 if time.time() >= next_chat:
-                    urls = {n: u for n, u in urls.items() if n not in _in_session}
+                    urls = {n: u for n, u in urls.items() if n not in _in_session and not busy(n)}
                     if len(urls) >= 2:
                         names = list(urls)
                         weights = [_personality(n)["chattiness"] for n in names]
