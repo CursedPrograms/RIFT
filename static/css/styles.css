@@ -109,7 +109,9 @@ h3 {
 
 /* ask & tell, music together */
 #tellSection .mode-row input, #musicSection .mode-row input { display: inline-block; }
-#tellSeconds, #musicTrack { flex: none; width: 80px; min-width: 0; }
+#tellSection .mode-row input[hidden] { display: none; }        /* only the fields the action takes */
+#tellSeconds, #tellMotor, #tellAngle, #musicTrack { flex: none; width: 80px; min-width: 0; }
+#musicParts { flex: 1 1 180px; min-width: 0; }
 .relay-out { margin-top: 8px; font-size: 0.78rem; color: var(--text-sec); white-space: pre-wrap; word-break: break-word; }
 .relay-out .bad { color: var(--text-dim); }
 .relay-out b { color: var(--accent); font-weight: normal; }

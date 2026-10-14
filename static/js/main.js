@@ -237,11 +237,35 @@ function showCore(c) {
     return parts.join(' &middot; ') || 'no common fields in her status';
 }
 
+// Only the fields an action takes: seconds for a drive, motor + angle for ARM's joint.
+const DRIVES = ['forward', 'back', 'left', 'right', 'turn_left', 'turn_right'];
+const tellSeconds = document.getElementById('tellSeconds');
+const tellMotor   = document.getElementById('tellMotor');
+const tellAngle   = document.getElementById('tellAngle');
+
+function syncTellFields() {
+    const a = tellAction.value;
+    tellSeconds.hidden = !DRIVES.includes(a);
+    tellMotor.hidden = tellAngle.hidden = a !== 'joint';
+}
+tellAction.addEventListener('change', syncTellFields);
+
+function tellBody() {
+    const body = { to: tellRobot.value, verb: 'do', action: tellAction.value };
+    if (!tellSeconds.hidden) body.seconds = parseFloat(tellSeconds.value) || 0.5;
+    if (!tellMotor.hidden) {
+        body.motor = parseInt(tellMotor.value, 10);
+        body.angle = parseInt(tellAngle.value, 10);
+    }
+    return body;
+}
+
 document.getElementById('askBtn').addEventListener('click', () => {
     if (!tellRobot.value) return;
     tellOut.textContent = 'asking...';
     talkVerb({ to: tellRobot.value, verb: 'ask' }).then(d => {
         tellAction.innerHTML = (d.does || []).map(a => `<option>${esc(a)}</option>`).join('');
+        syncTellFields();
         tellOut.innerHTML = d.ok
             ? `${esc(d.to)}: ${showCore(d.core || {})}${d.note ? `\n(${esc(d.note)})` : ''}${(d.does || []).length ? '' : '\nNothing she can be told yet.'}`
             : `<span class="bad">${esc(d.error || 'no answer')}</span>`;
@@ -260,8 +284,7 @@ function tell(body) {
 
 document.getElementById('tellBtn').addEventListener('click', () => {
     if (!tellRobot.value || !tellAction.value) { tellOut.textContent = 'Ask her first: that lists what she can do.'; return; }
-    const body = { to: tellRobot.value, verb: 'do', action: tellAction.value,
-                   seconds: parseFloat(document.getElementById('tellSeconds').value) || 0.5 };
+    const body = tellBody();
     tellOut.textContent = `telling ${body.to} to ${body.action}...`;
     tell(body).then(d => {
         tellOut.innerHTML = d.ok ? `${esc(d.to)} did <b>${esc(d.action)}</b>.` : `<span class="bad">${esc(d.error || 'she said no')}</span>`;
@@ -282,8 +305,20 @@ function showMusic(d) {
         a.ok ? `<b>${esc(n)}</b> ok` : `<span class="bad">${esc(n)}: ${esc(a.error || 'no')}</span>`).join(' &middot; ');
 }
 
+// "NORA=101, TINA=102" -> {NORA: 101, TINA: 102}: players with their own part (Fleet/music.py "parts")
+function musicParts() {
+    const parts = {};
+    for (const m of document.getElementById('musicParts').value.matchAll(/([A-Za-z][\w-]*)\s*[=:]\s*(\d+)/g))
+        parts[m[1].toUpperCase()] = parseInt(m[2], 10);
+    return parts;
+}
+
 document.querySelectorAll('[data-music]').forEach(btn => btn.addEventListener('click', () => {
-    const body = { action: btn.dataset.music, track: parseInt(document.getElementById('musicTrack').value, 10) };
+    const body = { action: btn.dataset.music };
+    const track = parseInt(document.getElementById('musicTrack').value, 10);
+    if (!Number.isNaN(track)) body.track = track;
+    const parts = musicParts();
+    if (Object.keys(parts).length) body.parts = parts;
     musicOut.textContent = `${body.action}...`;
     fetch('/music', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         .then(r => r.json()).then(d => { musicOut.innerHTML = showMusic(d); refreshMission(); })

@@ -40,7 +40,9 @@
             <select id="tellRobot"></select>
             <button id="askBtn">Ask</button>
             <select id="tellAction"></select>
-            <input type="number" id="tellSeconds" min="0.1" max="3" step="0.1" value="0.5" title="seconds, for a drive (max 3)" placeholder="s">
+            <input type="number" id="tellSeconds" min="0.1" max="3" step="0.1" value="0.5" title="seconds, for a drive (max 3)" placeholder="s" hidden>
+            <input type="number" id="tellMotor" min="1" max="6" step="1" value="1" title="ARM's joint: motor 1-6" placeholder="motor" hidden>
+            <input type="number" id="tellAngle" min="0" max="270" step="1" value="90" title="ARM's joint: angle in degrees (kept within the motor's range)" placeholder="angle" hidden>
             <button id="tellBtn">Tell</button>
         </div>
         <div id="tellOut" class="relay-out"></div>
@@ -51,6 +53,7 @@
         <p class="hint">Every player starts on the same moment on RIFT's clock. Tracks are numbered as on NORA's SD card.</p>
         <div class="mode-row">
             <input type="number" id="musicTrack" min="0" value="100" title="track number">
+            <input type="text" id="musicParts" placeholder="parts: NORA=101, TINA=102" title="optional: players with their own track (drums, melody...); the rest play the track number">
             <button data-music="play">Play</button>
             <button data-music="pause">Pause</button>
             <button data-music="resume">Resume</button>
