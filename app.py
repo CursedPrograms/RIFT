@@ -17,7 +17,7 @@ from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser
 
 from Fleet.register import start_fleet_authority
 from Fleet.internet_share import start_internet_share
-from Fleet import conversations, mission, music
+from Fleet import conversations, mission, music, relay
 from Fleet.rift_board import RiftBoard
 from Fleet.bt_autopair import start_autopair
 from Fleet import near_map
@@ -29,6 +29,7 @@ rift_near = FleetNear("RIFT", state="parked")
 
 # RIFT's own Arduino (arduino/rift_link): IR transmitter, receiver and buzzer.
 board = RiftBoard()
+relay.board = board   # IDA over IR when NORA is away
 
 app = Flask(__name__)
 
@@ -132,6 +133,8 @@ def _fleet_snapshot():
 # The robots chatting in Brainfuck (Fleet/conversations.py): GET /talk is the
 # shared log + moods; POST /talk starts one now ({"from": .., "to": ..} optional;
 # {"peer": true} for DREAM and KIDA-01: rock paper scissors, then words or Brainfuck).
+# POST /talk {"to": "NORA", "verb": "ask"} or {"verb": "do", "action": "music_stop"}
+# asks a robot its state or tells it to do something (Fleet/relay.py).
 
 @app.route("/talk")
 def talk_log():
@@ -142,6 +145,7 @@ def talk_log():
 # GET /clock     RIFT's time: players set their clocks by it
 # GET /music     who can play, and the last command
 # POST /music    {"action": "play" | "pause" | "resume" | "stop", "track": 100}
+#                ({"parts": {"NORA": 101, "TINA": 102}}: a track each)
 
 @app.route("/clock")
 def clock():
@@ -157,7 +161,8 @@ def music_status():
 def music_now():
     data = request.get_json(silent=True) or {}
     track = data.get("track")
-    out = music.conduct(_whole_fleet(), str(data.get("action", "")), int(track) if str(track).isdigit() else None)
+    out = music.conduct(_whole_fleet(), str(data.get("action", "")), int(track) if str(track).isdigit() else None,
+                        data.get("parts") if isinstance(data.get("parts"), dict) else None)
     return jsonify(out), 200 if out.get("ok") else 400
 
 
@@ -209,6 +214,18 @@ def board_talk():
 @app.route("/talk", methods=["POST"])
 def talk_now():
     data = request.get_json(silent=True) or {}
+    verb = str(data.get("verb", "say")).lower()
+    if verb in ("ask", "do"):   # Fleet/relay.py: ask a robot its state, tell it to do something
+        who = str(data.get("from") or "someone")[:24]
+        if verb == "ask":
+            code, out = relay.ask(_whole_fleet(), data.get("to"), who)
+        else:
+            args = {k: v for k, v in data.items() if k not in ("to", "from", "verb", "action", "confirmed")}
+            code, out = relay.do(_whole_fleet(), data.get("to"), data.get("action"), args, who,
+                                 confirmed=data.get("confirmed") is True)
+        return jsonify(out), code
+    if verb != "say":
+        return jsonify({"error": "verb is say, ask or do"}), 400
     urls = conversations.talkers(_fleet_snapshot())
     a, b = data.get("from"), data.get("to")
     names = list(urls)

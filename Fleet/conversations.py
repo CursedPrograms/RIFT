@@ -223,17 +223,35 @@ def talkers(fleet_snapshot):
 # Their programs play a startup sound: nobody talks to them until it's over.
 STARTUP_QUIET_S = {"KIDA": 12, "NORA": 12}    # name prefix -> seconds online first (KIDA00, KIDA01)
 _online_since = {}
+# Robots that say how long they've been up: a quick reboot never drops them off the
+# roster, so their boot time counts as "online since". NORA's /talk "now" = millis().
+UPTIME_MS = {"NORA": "/talk"}
+
+
+def _uptime_s(name, url):
+    raw = _get(url + UPTIME_MS[name], timeout=2)
+    try:
+        return json.loads(raw)["now"] / 1000 if raw else None
+    except (ValueError, KeyError, TypeError):
+        return None
 
 
 def settled(urls):
     """The talkers that have been online long enough to chat. One that drops out
-    and comes back waits again."""
+    and comes back waits again, and so does one that rebooted without dropping out."""
     now = time.time()
     for n in list(_online_since):
         if n not in urls:
             del _online_since[n]
     for n in urls:
         _online_since.setdefault(n, now)
+        if n in UPTIME_MS:
+            up = _uptime_s(n, urls[n])
+            if up is not None:
+                booted = now - up
+                if booted > _online_since[n] + 5:
+                    print(f"[RIFT] {n} rebooted ({up:.0f} s ago): quiet until her startup is over")
+                _online_since[n] = booted
     return {n: u for n, u in urls.items()
             if now - _online_since[n] >= next((s for k, s in STARTUP_QUIET_S.items() if n.upper().startswith(k)), 0)}
 

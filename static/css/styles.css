@@ -106,3 +106,10 @@ h3 {
 .mode-row button { color: var(--accent); cursor: pointer; }
 .mode-row button:hover { background: var(--button-hover-bg); color: var(--accent-hover); border-color: var(--accent); }
 #modeStatus { color: var(--text-sec); font-size: 0.8rem; }
+
+/* ask & tell, music together */
+#tellSection .mode-row input, #musicSection .mode-row input { display: inline-block; }
+#tellSeconds, #musicTrack { flex: none; width: 80px; min-width: 0; }
+.relay-out { margin-top: 8px; font-size: 0.78rem; color: var(--text-sec); white-space: pre-wrap; word-break: break-word; }
+.relay-out .bad { color: var(--text-dim); }
+.relay-out b { color: var(--accent); font-weight: normal; }

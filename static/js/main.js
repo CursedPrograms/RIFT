@@ -204,3 +204,92 @@ modeApply.addEventListener('click', () => {
 
 syncBtPortVisibility();
 loadMode();
+
+// ── Ask & tell (POST /talk with verb ask / do: Fleet/relay.py) ──────────
+
+const tellRobot  = document.getElementById('tellRobot');
+const tellAction = document.getElementById('tellAction');
+const tellOut    = document.getElementById('tellOut');
+
+function talkVerb(body) {
+    return fetch('/talk', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(Object.assign({ from: 'RIFT dashboard' }, body)) })
+        .then(r => r.json());
+}
+
+function fillRobots() {
+    fetch('/fleet').then(r => r.json()).then(data => {
+        const names = (data.robots || []).map(r => r.name);
+        const keep = tellRobot.value;
+        if (names.join() === [...tellRobot.options].map(o => o.value).join()) return;
+        tellRobot.innerHTML = names.map(n => `<option>${esc(n)}</option>`).join('') || '<option value="">nobody online</option>';
+        if (names.includes(keep)) tellRobot.value = keep;
+    }).catch(() => {});
+}
+
+function showCore(c) {
+    const parts = [];
+    if (c.mode != null) parts.push(`mode <b>${esc(c.mode)}</b>`);
+    if (c.moving != null) parts.push(c.moving ? '<b>moving</b>' : 'still');
+    if (c.music) parts.push(`music <b>${esc(c.music)}</b>`);
+    const d = Object.entries(c.distances_cm || {}).map(([k, v]) => `${esc(k)} ${esc(v)} cm`).join(', ');
+    if (d) parts.push(d);
+    return parts.join(' &middot; ') || 'no common fields in her status';
+}
+
+document.getElementById('askBtn').addEventListener('click', () => {
+    if (!tellRobot.value) return;
+    tellOut.textContent = 'asking...';
+    talkVerb({ to: tellRobot.value, verb: 'ask' }).then(d => {
+        tellAction.innerHTML = (d.does || []).map(a => `<option>${esc(a)}</option>`).join('');
+        tellOut.innerHTML = d.ok
+            ? `${esc(d.to)}: ${showCore(d.core || {})}${d.note ? `\n(${esc(d.note)})` : ''}${(d.does || []).length ? '' : '\nNothing she can be told yet.'}`
+            : `<span class="bad">${esc(d.error || 'no answer')}</span>`;
+    }).catch(() => { tellOut.innerHTML = "<span class='bad'>RIFT didn't answer.</span>"; });
+});
+
+function tell(body) {
+    return talkVerb(body).then(d => {
+        if (d.needs === 'confirmed' && !body.confirmed) {
+            if (!confirm(`${body.action} can move ${body.to}. Go ahead?`)) return { ok: false, error: 'You said no.' };
+            return tell(Object.assign({}, body, { confirmed: true }));
+        }
+        return d;
+    });
+}
+
+document.getElementById('tellBtn').addEventListener('click', () => {
+    if (!tellRobot.value || !tellAction.value) { tellOut.textContent = 'Ask her first: that lists what she can do.'; return; }
+    const body = { to: tellRobot.value, verb: 'do', action: tellAction.value,
+                   seconds: parseFloat(document.getElementById('tellSeconds').value) || 0.5 };
+    tellOut.textContent = `telling ${body.to} to ${body.action}...`;
+    tell(body).then(d => {
+        tellOut.innerHTML = d.ok ? `${esc(d.to)} did <b>${esc(d.action)}</b>.` : `<span class="bad">${esc(d.error || 'she said no')}</span>`;
+        refreshMission();
+    }).catch(() => { tellOut.innerHTML = "<span class='bad'>RIFT didn't answer.</span>"; });
+});
+
+fillRobots();
+setInterval(fillRobots, 10000);
+
+// ── Music together (POST /music: Fleet/music.py) ────────────────────────
+
+const musicOut = document.getElementById('musicOut');
+
+function showMusic(d) {
+    if (d.error) return `<span class="bad">${esc(d.error)}</span>`;
+    return Object.entries(d.players || {}).map(([n, a]) =>
+        a.ok ? `<b>${esc(n)}</b> ok` : `<span class="bad">${esc(n)}: ${esc(a.error || 'no')}</span>`).join(' &middot; ');
+}
+
+document.querySelectorAll('[data-music]').forEach(btn => btn.addEventListener('click', () => {
+    const body = { action: btn.dataset.music, track: parseInt(document.getElementById('musicTrack').value, 10) };
+    musicOut.textContent = `${body.action}...`;
+    fetch('/music', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        .then(r => r.json()).then(d => { musicOut.innerHTML = showMusic(d); refreshMission(); })
+        .catch(() => { musicOut.innerHTML = "<span class='bad'>RIFT didn't answer.</span>"; });
+}));
+
+fetch('/music').then(r => r.ok ? r.json() : Promise.reject()).then(d => {
+    musicOut.innerHTML = d.players.length ? `Players: ${d.players.map(esc).join(', ')}` : 'No players registered (music:&lt;port&gt;).';
+}).catch(() => { document.getElementById('musicSection').style.display = 'none'; });

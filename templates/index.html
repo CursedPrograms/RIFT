@@ -33,6 +33,32 @@
         <div id="robots" class="grid"><p class="empty">No robots online yet.</p></div>
     </section>
 
+    <section id="tellSection">
+        <h3>Ask &amp; tell</h3>
+        <p class="hint">Ask a robot how it is, or tell it to do something (RIFT relays it and notes it in the mission log). Anything that moves a robot asks you first.</p>
+        <div class="mode-row">
+            <select id="tellRobot"></select>
+            <button id="askBtn">Ask</button>
+            <select id="tellAction"></select>
+            <input type="number" id="tellSeconds" min="0.1" max="3" step="0.1" value="0.5" title="seconds, for a drive (max 3)" placeholder="s">
+            <button id="tellBtn">Tell</button>
+        </div>
+        <div id="tellOut" class="relay-out"></div>
+    </section>
+
+    <section id="musicSection">
+        <h3>Music together</h3>
+        <p class="hint">Every player starts on the same moment on RIFT's clock. Tracks are numbered as on NORA's SD card.</p>
+        <div class="mode-row">
+            <input type="number" id="musicTrack" min="0" value="100" title="track number">
+            <button data-music="play">Play</button>
+            <button data-music="pause">Pause</button>
+            <button data-music="resume">Resume</button>
+            <button data-music="stop">Stop</button>
+        </div>
+        <div id="musicOut" class="relay-out"></div>
+    </section>
+
     <section id="nearSection">
         <h3>Who's near whom</h3>
         <p class="empty" style="margin:0 0 8px">From each robot's radios (ESP-NOW and Bluetooth LE). Over ESP-NOW they say what they're doing in Brainfuck; RIFT decodes it.</p>
