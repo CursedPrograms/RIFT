@@ -21,8 +21,14 @@ def world(monkeypatch):
     uptime = {"NORA": 600.0}          # seconds; None = she doesn't answer /talk
     monkeypatch.setattr(conv, "time", clock)
     monkeypatch.setattr(conv, "_online_since", {})
-    monkeypatch.setattr(conv, "_get", lambda url, timeout=2:
+    # NORA's uptime comes from the background probe's /talk (conversations._nora_talk), fresh each time here
+    monkeypatch.setattr(conv, "_nora_talk", lambda:
                         None if uptime["NORA"] is None else json.dumps({"now": uptime["NORA"] * 1000}))
+
+    class Fresh(dict):
+        def __getitem__(self, k):
+            return clock.t if k == "talk_t" else dict.__getitem__(self, k)
+    monkeypatch.setattr(conv, "_nora_cache", Fresh())
     return clock, uptime
 
 

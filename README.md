@@ -94,6 +94,82 @@ ARM: :5011
 ## ▶️ Starting RIFT
 `run.bat` starts the **Python hub** (`app.py`): it sets up `venv\` and installs `requirements.txt` the first time (again only when that file changes). That's the one with the conversations and the mission log. `run_server.bat` starts the native C++ hub instead (and the Go, Rust, Julia and F# hubs have their own `run_server_*.bat`); they share the same dashboard but only have the fleet registry, so the Conversations and Mission Log sections stay hidden there.
 
+## 🛜 The fleet network: RIFT is the hub
+
+RIFT's own WiFi network, **"RIFT"**, is where every robot lives. A router broadcasts it, and the machine running RIFT
+is its hub at **192.168.4.1**: it hands out the robots' addresses, shares its internet with them if it has any, and
+runs the fleet registry on port 5000. That's the address every robot already registers with, so they find RIFT
+without knowing anything else. NORA used to be the hub. She's now a normal robot, and hosts her own "NORA" network
+only as a fallback when RIFT isn't around.
+
+```
+internet (WiFi dongle, or another port) ─► hub: RIFT at 192.168.4.1:5000
+                                             │ Ethernet
+                                             ▼
+                      Mercusys MW302R, Access Point mode, WiFi "RIFT" (2.4 GHz, WPA2)
+                             ▲      ▲      ▲      ▲       ▲       ▲
+                           NORA   MILA   WHIP  KIDA00  KIDA01  ARM's controller
+```
+
+The hub can be **Windows, Kubuntu or a Raspberry Pi 3** (Raspberry Pi OS Bookworm): anything with an Ethernet port.
+Your home network stays as it is. The robots can reach out to the internet through the hub, but nothing on your home
+network can reach the robots, except RIFT's dashboard.
+
+<details>
+<summary><b>Set it up</b></summary>
+
+**1. The router** (Mercusys MW302R, [official guide](https://mercusys.com/au/faq-1111))
+1. Plug the hub's Ethernet port into the router's **WAN** port.
+2. Join the router's WiFi (the name and password on its sticker) and open **http://mwlogin.net**.
+3. **Change Mode** (top right) → **Access Point Mode**. It reboots.
+4. WiFi name **RIFT**, security **WPA2-PSK (AES)**, password **`mmvbkbak`** (the fleet's: it's in every robot's
+   `secrets.h`). The ESP robots can't do WPA3.
+5. Change the router's admin password, and turn **WPS** off if it's offered.
+
+**2. The hub.** From the RIFT folder:
+
+| Hub | Command |
+|---|---|
+| Kubuntu / Raspberry Pi | `./hub/setup_hub.sh --dry-run` to look, then `./hub/setup_hub.sh --service` (RIFT also starts at boot) |
+| Windows | in PowerShell as Administrator: `.\hub\setup_hub.ps1 -DryRun` to look, then `.\hub\setup_hub.ps1` |
+
+Both scripts say what they'll change and ask first. They're safe to run again, and `--undo` / `-Undo` takes it all back.
+- **With internet** (a WiFi dongle or another port), the hub shares it with the robots.
+- **Without internet**, the robots still get addresses and everything in the fleet works, just offline. On Windows
+  with no uplink, put the router in its normal **Router** mode instead, with its own address handing (DHCP) on.
+
+**3. The robots** join "RIFT" and register with 192.168.4.1:5000. If RIFT isn't there they use NORA's fallback
+network, and they rejoin RIFT when it comes back.
+- **ESP robots** (NORA, MILA, WHIP): their `secrets.h` next to the sketch has RIFT's password (`mmvbkbak`),
+  NORA's fallback password (`mmvbkbak`, the same on every robot) and the robot's PIN (`1234`); then flash.
+  Without a `secrets.h` the sketch still builds, with `secrets.example.h`'s placeholders that can't join RIFT.
+- **Pis** (KIDA00, KIDA01): `sudo nmcli dev wifi connect RIFT password 'mmvbkbak'` and
+  `sudo nmcli dev wifi connect NORA password 'mmvbkbak'`, then `sudo nmcli con modify RIFT connection.autoconnect-priority 20`
+  and `sudo nmcli con modify NORA connection.autoconnect-priority 10`, so they prefer RIFT.
+- **PC programs** (DREAM, TINA, NINA, ARM's controller): their `RiftHost` setting is `127.0.0.1` on the hub
+  itself, `192.168.4.1` from any other machine.
+
+</details>
+
+<details>
+<summary><b>Setting up the hub with Claude Code</b></summary>
+
+Open Claude Code in the RIFT folder on the hub machine and paste this:
+
+```
+This machine is going to be the RIFT fleet hub. Read README.md, section "The fleet network: RIFT is the hub",
+then help me set it up:
+1. git pull first. Check which OS this is (Windows / Kubuntu / Raspberry Pi OS) and which network adapters
+   there are: the Ethernet port that goes to the router, and the internet uplink (WiFi dongle or other port).
+2. Run the hub setup script in dry-run mode and show me what it would change. Wait for my OK, then run it.
+3. Start RIFT (run.bat / run.sh, or the rift service on Linux) and check that http://192.168.4.1:5000/robots
+   answers from this machine.
+4. Once I've switched a robot on, check that it shows up in /robots, and help me find out why if it doesn't.
+Don't flash any robot without asking me.
+```
+
+</details>
+
 ## 💬 Conversations (in Brainfuck)
 RIFT has the robots chat: every 25–60 s it picks two that can talk and has the first say a phrase and the second answer. Every phrase is a **Brainfuck program that prints its words** (hello is `++++++++[>+++++++++++++<-]>.+.` → `hi`), and a robot says it by beeping the program on its buzzer, one tone per symbol, in its own voice.
 

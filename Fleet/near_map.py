@@ -23,7 +23,12 @@ from . import brainfuck_talk
 # the robots that serve /near, and where (their web ports)
 NEAR_PORTS = {"NORA": 5002, "WHIP": 5005, "KIDA00": 5003, "KIDA01": 5004}
 CACHE_S = 3.0
+# The ESP32s serve one client at a time, and the dashboard asks every 3 s: each fetch competes
+# with their own pages (NORA's page and RIFT's 3 s /near polling knocked her offline). Their
+# /near is fetched at most this often; the Pis keep CACHE_S.
+EVERY_S = {"NORA": 15.0, "WHIP": 15.0}
 _cache = {"t": 0.0, "data": None}
+_last = {}                      # name -> (when fetched, its /near answer or None)
 
 
 def _get(url, timeout=2.5):
@@ -53,7 +58,10 @@ def collect(fleet_robots, rift_near=None):
         port = NEAR_PORTS.get(name)
         if not port or not r.get("ip"):
             continue
-        st = _get(f"http://{r['ip']}:{port}/near")
+        when, st = _last.get(name, (0.0, None))
+        if time.time() - when >= EVERY_S.get(name, CACHE_S):
+            st = _get(f"http://{r['ip']}:{port}/near")
+            _last[name] = (time.time(), st)
         if st is None:
             continue
         for peer in st.get("robots", []):

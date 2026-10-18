@@ -53,11 +53,17 @@ _fleet_lock = threading.Lock()
 _peers: dict[str, str] = {}
 _peers_lock = threading.Lock()
 
-# Connection Mode: which transport the fleet-authority heartbeat to NORA
-# uses. Default WiFi/HTTP, same as always; switching to Bluetooth restarts
-# the heartbeat thread over Fleet/bt_link.py instead (see Fleet/register.py).
+# Who hosts the fleet network. Normally RIFT is the hub: the "RIFT" router network, with RIFT at
+# 192.168.4.1:5000 as THE fleet registry every robot registers with (hub/ has the setup scripts).
+# RIFT_NORA_HUB=1 is the old setup: NORA hosts the network and RIFT heartbeats to her registry and
+# shares internet onto her AP (Fleet/register.py, Fleet/internet_share.py).
+NORA_HUB = os.environ.get("RIFT_NORA_HUB", "").strip() == "1"
+
+# Connection Mode: "hub" (RIFT is the registry: no heartbeat to anyone), or which transport the
+# fleet-authority heartbeat to NORA uses: WiFi/HTTP, or Bluetooth over Fleet/bt_link.py
+# (see Fleet/register.py).
 _mode_lock       = threading.Lock()
-_transport_mode  = "wifi"
+_transport_mode  = "wifi" if NORA_HUB else "hub"
 _bt_port         = None
 _fleet_thread    = None
 _fleet_stop      = None
@@ -273,9 +279,12 @@ def _whole_fleet():
         caps = r.get("capabilities", [])
         robots[r["name"]] = {"name": r["name"], "ip": r["ip"], "type": r.get("type", "robot"),
                              "capabilities": caps, "url": _web_url(r["name"], r["ip"], caps)}
-    if nora["up"]:
-        robots["NORA"] = {"name": "NORA", "ip": conversations.NORA_HOST, "type": "mecanum",
-                          "capabilities": ["fleet_registry", "ir_link"], "url": _web_url("NORA", conversations.NORA_HOST, [])}
+    if "NORA" in robots:            # registered with RIFT like everyone (the "RIFT" network)
+        robots["NORA"]["busy"] = nora["up"] and not nora["api"]
+    elif nora["up"] and nora["host"]:   # on her own fallback AP: found at her registry
+        robots["NORA"] = {"name": "NORA", "ip": nora["host"], "type": "mecanum",
+                          "capabilities": ["fleet_registry", "ir_link"], "url": _web_url("NORA", nora["host"], []),
+                          "busy": not nora["api"]}    # "busy" = her page / API (:5002) didn't answer, last look
     return sorted(robots.values(), key=lambda r: r["name"])
 
 
@@ -358,6 +367,9 @@ def _restart_fleet_authority(transport, bt_port=None):
     if _fleet_stop is not None:
         _fleet_stop.set()
         _fleet_thread.join(timeout=2)
+        _fleet_thread = _fleet_stop = None
+    if transport == "hub":          # RIFT is the registry itself: nobody to announce to
+        return
     _fleet_thread, _fleet_stop = start_fleet_authority(
         name=THIS_NAME,
         capabilities=["fleet_management", "monitoring"],
@@ -377,8 +389,8 @@ def set_mode():
     global _transport_mode, _bt_port
     data = request.get_json(silent=True) or request.form
     mode = (data.get("mode") or "").strip().lower()
-    if mode not in ("wifi", "bluetooth"):
-        return jsonify({"error": "mode must be 'wifi' or 'bluetooth'"}), 400
+    if mode not in ("hub", "wifi", "bluetooth"):
+        return jsonify({"error": "mode must be 'hub', 'wifi' or 'bluetooth'"}), 400
 
     bt_port = (data.get("bt_port") or "").strip() or None
     if mode == "bluetooth" and not bt_port:
@@ -435,16 +447,24 @@ if __name__ == "__main__":
     print(f"[RIFT] IP   : {MY_IP}")
     print(f"[RIFT] Port : {THIS_PORT}")
 
-    _zc_instance, _zc_info = _start_zeroconf()
-    print(f"[RIFT] Zeroconf registered as {THIS_NAME}; "
-          f"watching {RIFT_ZEROCONF_TYPE} and {DREAM_ZEROCONF_TYPE}")
+    _zc_instance = _zc_info = None
+    try:       # optional: the robots find RIFT at 192.168.4.1 anyway (no multicast on some networks)
+        _zc_instance, _zc_info = _start_zeroconf()
+        print(f"[RIFT] Zeroconf registered as {THIS_NAME}; "
+              f"watching {RIFT_ZEROCONF_TYPE} and {DREAM_ZEROCONF_TYPE}")
+    except Exception as e:
+        print(f"[RIFT] Zeroconf unavailable ({type(e).__name__}: {e}); carrying on without it")
 
     with _mode_lock:
         _restart_fleet_authority(_transport_mode)
-    print(f"[RIFT] Announcing to NORA as fleet authority (mode: {_transport_mode})")
-
-    start_internet_share()
-    print("[RIFT] Internet-share to NORA's AP started")
+    if NORA_HUB:
+        print(f"[RIFT] NORA is the hub (RIFT_NORA_HUB=1): announcing to her as fleet authority "
+              f"(mode: {_transport_mode})")
+        start_internet_share()
+        print("[RIFT] Internet-share to NORA's AP started")
+    else:
+        print(f"[RIFT] RIFT is the hub: the fleet registry at {MY_IP}:{THIS_PORT} "
+              f"(the robots expect 192.168.4.1; set RIFT_NORA_HUB=1 if NORA hosts the network)")
 
     conversations.start(_fleet_snapshot)
     board.start()   # looks for its own Arduino after 25 s, on ports nobody else has open
@@ -457,6 +477,7 @@ if __name__ == "__main__":
     try:
         app.run(host="0.0.0.0", port=THIS_PORT, debug=False, use_reloader=False, threaded=True)
     finally:
-        _zc_instance.unregister_service(_zc_info)
-        _zc_instance.close()
-        print("[RIFT] Zeroconf unregistered.")
+        if _zc_instance is not None:
+            _zc_instance.unregister_service(_zc_info)
+            _zc_instance.close()
+            print("[RIFT] Zeroconf unregistered.")

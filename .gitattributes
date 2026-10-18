@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# shell scripts run on Linux (the hub, the Pi): always LF
+*.sh text eol=lf
+*.service text eol=lf

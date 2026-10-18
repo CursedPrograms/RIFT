@@ -32,6 +32,8 @@ from concurrent.futures import ThreadPoolExecutor
 from Fleet import mission
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# Where NORA is when she hosts her own fallback "NORA" AP (no "RIFT" network around). Normally
+# 192.168.4.1 is RIFT's own PC on the "RIFT" router, and NORA is found in RIFT's roster.
 NORA_HOST = "192.168.4.1"
 NORA_FLEET_PORT = 5000   # her fleet registry (/robots)
 NORA_API_PORT = 5002     # her robot API (/chirp, /talk)
@@ -182,21 +184,101 @@ def _record(entry):
         del _log[:-LOG_LEN]
 
 
-_nora_cache = {"t": 0, "roster": [], "up": False}   # NORA probes, refreshed every 30 s
+# NORA, as RIFT sees her. Two ways she can be there:
+#   - on the "RIFT" network (normal): she registers with RIFT like every robot, so she's in RIFT's
+#     own roster with her address; her heartbeat says she's up.
+#   - hosting her own fallback "NORA" AP, with RIFT's PC joined to it: she's at NORA_HOST
+#     (192.168.4.1) with her own fleet registry on :5000. Only then does RIFT probe :5000 - and only
+#     an answer of "NORA alive" counts (on the RIFT network 192.168.4.1 is RIFT itself).
+# Her ESP32 runs two web servers, each serving one client at a time: :5002 (her page and robot API)
+# can be held for seconds by a browser that has her page open, while :5000 has its own slot. So:
+#   up    = in RIFT's roster, or her :5000 answers. A few missed probes (NORA_MISSES) before gone.
+#   api   = :5002 answered the last time; slow or silent while she's up means "busy", not gone.
+# The probes run in the background every NORA_REFRESH_S, never inside a dashboard request.
+NORA_REFRESH_S = 15
+NORA_TIMEOUT_S = 4       # her ESP32 is slow; a 2 s timeout lost her whenever her page was open
+NORA_MISSES = 3          # :5000 silent this many probes in a row (~45 s) = gone
+_nora_cache = {"t": 0, "roster": [], "up": False, "api": False, "misses": 0, "talk": None, "talk_t": 0,
+               "host": None, "via": None}
+_nora_lock = threading.Lock()
+_roster_fn = lambda: []  # RIFT's own roster (app.py's _fleet_snapshot), set by start()
+
+
+def _get_http(url, timeout):
+    """GET url over plain http only (NORA has no https: _get's https retry doubled every miss)."""
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as r:
+            return r.read()
+    except Exception:
+        return None
+
+
+def _registered_nora():
+    try:
+        return next((r for r in _roster_fn() if str(r.get("name", "")).upper() == "NORA"), None)
+    except Exception:
+        return None
+
+
+def _nora_probe():
+    """One look at NORA: is she there (RIFT's roster, else her own AP's registry), and does her
+    API answer (:5002/talk: also her uptime and IR log, kept for settled() and merge_nora_ir_log())."""
+    try:
+        me = _registered_nora()
+        roster = None
+        if me:                                   # on the RIFT network: her heartbeat says she's up
+            host, via, alive = me.get("ip"), "rift", True
+            roster = []                          # her own registry isn't in use
+        else:                                    # her fallback AP, if RIFT's PC is on it
+            host, via = NORA_HOST, "own_ap"
+            ping = _get_http(f"http://{host}:{NORA_FLEET_PORT}/ping", NORA_TIMEOUT_S)
+            alive = ping is not None and ping.strip().upper().startswith(b"NORA")
+            raw = _get_http(f"http://{host}:{NORA_FLEET_PORT}/robots", NORA_TIMEOUT_S) if alive else None
+            if raw:
+                try:
+                    roster = json.loads(raw).get("robots", [])
+                except ValueError:
+                    pass
+        talk = _get_http(f"http://{host}:{NORA_API_PORT}/talk", NORA_TIMEOUT_S) if alive and host else None
+        with _nora_lock:
+            c = _nora_cache
+            c["misses"] = 0 if alive else c["misses"] + 1
+            was = c["up"]
+            c["up"] = alive or (was and c["misses"] < NORA_MISSES)
+            c["api"] = talk is not None
+            if alive:
+                c["host"], c["via"] = host, via
+            if roster is not None:
+                c["roster"] = roster
+            elif not c["up"]:
+                c["roster"] = []
+            if not c["up"]:
+                c["host"] = c["via"] = None
+            if talk is not None:
+                c["talk"], c["talk_t"] = talk, time.time()
+            if was and not c["up"]:
+                print(f"[RIFT] NORA gone: not in RIFT's roster, and nothing at {NORA_HOST}:{NORA_FLEET_PORT} "
+                      f"for {c['misses']} probes")
+    finally:
+        _nora_cache["t"] = time.time()
+        _nora_cache.pop("probing", None)
 
 
 def _nora():
-    if time.time() - _nora_cache["t"] > 30:
-        raw = _get(f"http://{NORA_HOST}:{NORA_FLEET_PORT}/robots", timeout=2)
-        roster = []
-        if raw:
-            try:
-                roster = json.loads(raw).get("robots", [])
-            except ValueError:
-                pass
-        _nora_cache.update(t=time.time(), roster=roster,
-                           up=_get(f"http://{NORA_HOST}:{NORA_API_PORT}/talk", timeout=2) is not None)
+    """NORA's state at once (never waits on her): a stale one starts a probe in the background."""
+    with _nora_lock:
+        stale = time.time() - _nora_cache["t"] > NORA_REFRESH_S and "probing" not in _nora_cache
+        if stale:
+            _nora_cache["probing"] = True
+    if stale:
+        threading.Thread(target=_nora_probe, daemon=True, name="nora-probe").start()
     return _nora_cache
+
+
+def _nora_talk():
+    """Her last /talk answer (uptime, IR log), if it's from the last probe or two; None if not."""
+    c = _nora_cache
+    return c["talk"] if c["talk"] is not None and time.time() - c["talk_t"] < 2 * NORA_REFRESH_S + 5 else None
 
 
 _peer_caps = set()   # names of the robots that registered "peer" (a mind of their own)
@@ -215,8 +297,10 @@ def talkers(fleet_snapshot):
                     found[r["name"]] = f"http://{r['ip']}:{cap[5:]}"
                 elif cap == "peer":
                     _peer_caps.add(r["name"])
-    if nora["up"]:
-        found["NORA"] = f"http://{NORA_HOST}:{NORA_API_PORT}"
+    if nora["up"] and nora["api"] and nora["host"]:   # busy (:5002 not answering): she sits this chatter out
+        found["NORA"] = f"http://{nora['host']}:{NORA_API_PORT}"
+    elif "NORA" in found and not (nora["up"] and nora["api"]):
+        del found["NORA"]                              # registered with talk:, but her :5002 is busy
     return found
 
 
@@ -229,9 +313,12 @@ UPTIME_MS = {"NORA": "/talk"}
 
 
 def _uptime_s(name, url):
-    raw = _get(url + UPTIME_MS[name], timeout=2)
+    if name == "NORA":                  # from the background probe, aged to now: no extra request on her :5002
+        raw, age = _nora_talk(), time.time() - _nora_cache["talk_t"]
+    else:
+        raw, age = _get(url + UPTIME_MS[name], timeout=2), 0
     try:
-        return json.loads(raw)["now"] / 1000 if raw else None
+        return json.loads(raw)["now"] / 1000 + age if raw else None
     except (ValueError, KeyError, TypeError):
         return None
 
@@ -446,7 +533,7 @@ def merge_nora_ir_log():
     """Copy NORA's IR chats with IDA (her /talk log) into the fleet log."""
     if not _nora()["up"]:
         return
-    raw = _get(f"http://{NORA_HOST}:{NORA_API_PORT}/talk", timeout=2)
+    raw = _nora_talk()                  # the background probe's /talk: no extra request on her :5002
     if not raw:
         return
     try:
@@ -476,6 +563,9 @@ def snapshot():
 def start(get_fleet_snapshot, min_gap=25, max_gap=60):
     """Background thread: a conversation every min_gap-max_gap s, and NORA's IR
     log merged every 10 s. get_fleet_snapshot() returns RIFT's own roster."""
+    global _roster_fn
+    _roster_fn = get_fleet_snapshot          # _nora() finds her there first
+
     def _loop():
         next_chat = time.time() + 10
         while True:

@@ -1,0 +1,20 @@
+# RIFT, the fleet hub, at boot (Raspberry Pi OS, Kubuntu). Installed by: hub/setup_hub.sh --service
+# (it fills in @RIFT_DIR@ and @USER@). By hand: copy to /etc/systemd/system/rift.service, replace
+# both, then: sudo systemctl daemon-reload && sudo systemctl enable --now rift.service
+#   logs: journalctl -u rift -f
+[Unit]
+Description=RIFT - the DREAM Robotics fleet hub (registry at 192.168.4.1:5000)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=@USER@
+WorkingDirectory=@RIFT_DIR@
+ExecStart="@RIFT_DIR@/run.sh"
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
