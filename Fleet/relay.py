@@ -89,6 +89,9 @@ ADAPTERS = {
     "MILA": {"does": {"scan": "/scan"},
              "note": "scan only: driving her needs the PIN (/unlock), which RIFT never sends"},
     "WHIP": {"does": {}, "note": "ask only: /web and /mode need the PIN (/unlock), which RIFT never sends"},
+    # NIKA runs MILA's firmware (NIKA-Robot-v00), with her /scan
+    "NIKA": {"does": {"scan": "/scan"},
+             "note": "scan only: driving her needs the PIN (/unlock), which RIFT never sends"},
 }
 
 
@@ -104,7 +107,7 @@ def core(name, status):
                    music=pick(["stopped", "playing", "paused"], s.get("ms")),
                    distances_cm={k: s[c] for k, c in (("front", "F"), ("left", "L"), ("back", "B"), ("right", "R")) if c in s},
                    wheels_locked=bool(s.get("lock")) if "lock" in s else None)
-    elif n == "MILA":
+    elif n in ("MILA", "NIKA"):
         out.update(moving=bool(s.get("ml") or s.get("mr")) if "ml" in s else None,
                    distances_cm={"front": s["dist"]} if "dist" in s else {})
         if s.get("scan_ms", -1) >= 0:          # her last SCAN: left / front / right, and how old it is
