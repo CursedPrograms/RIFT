@@ -3,7 +3,7 @@
 // counterpart of Fleet/register.py + Fleet/bt_link.py: while RIFT keeps
 // heartbeating, NORA defers her /robots response to point at RIFT; if it stops,
 // the registration simply expires on her side.
-package com.example.riftcontrol
+package com.cursedentertainment.rift
 
 import java.net.HttpURLConnection
 import java.net.URL
@@ -24,7 +24,7 @@ class RiftAuthority(private val cfg: RiftConfig, private val btFactory: BtLinkFa
     }
 
     private val gate = Object()
-    private var mode = "wifi"
+    private var mode = "hub"     // like app.py: RIFT is the fleet's hub, announcing itself to nobody
     private var btPort = ""
     private var worker: Thread? = null
 
@@ -36,7 +36,7 @@ class RiftAuthority(private val cfg: RiftConfig, private val btFactory: BtLinkFa
             stopLocked()
             mode = newMode
             btPort = newBtPort
-            if (cfg.noHeartbeat) return
+            if (cfg.noHeartbeat || newMode == "hub") return
             val flag = java.util.concurrent.atomic.AtomicBoolean(false)
             currentFlag = flag
             worker = Thread({ loop(newMode, newBtPort, flag) }, "rift-heartbeat").apply { isDaemon = true; start() }

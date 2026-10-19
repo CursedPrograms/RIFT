@@ -5,7 +5,7 @@
 // app.py's _fleet/_peers dicts and Flask routes - same wire protocol, so
 // PC App/PyGame/registration.py, PC App/App/registration.cpp and every robot's
 // heartbeat work unchanged.
-package com.example.riftcontrol
+package com.cursedentertainment.rift
 
 import org.json.JSONArray
 import org.json.JSONException
@@ -59,6 +59,10 @@ class RiftPeers {
 interface RiftAssets {
     fun template(): String?
     fun staticFile(rel: String): ByteArray?
+    /** Another page in templates/ (cameras.html); null if there's none. */
+    fun page(name: String): String? = if (name == "index.html") template() else null
+    /** RIFT's colour_scheme.xml, for /colour_scheme.css; null = styles.css's own defaults. */
+    fun colours(): String? = null
 }
 
 class Reply(val status: Int, val contentType: String, val body: ByteArray) {
@@ -109,14 +113,22 @@ private fun contentTypeFor(path: String) = when (path.substringAfterLast('.', ""
     else -> "application/octet-stream"
 }
 
+/** colour_scheme.xml as CSS variables, the way app.py's /colour_scheme.css does it. */
+fun colourSchemeCss(xml: String?): String {
+    val pairs = Regex("""name="(\w+)"\s+value="(#[0-9A-Fa-f]{6})"""").findAll(xml.orEmpty())
+    return ":root {\n" + pairs.joinToString("") { "    --${it.groupValues[1].replace('_', '-')}: ${it.groupValues[2]};\n" } + "}\n"
+}
+
 class RiftRoutes(
     private val cfg: RiftConfig,
     val registry: RiftRegistry,
     val peers: RiftPeers,
     private val authority: RiftAuthority,
     private val assets: RiftAssets,
+    private val relay: RiftRelay = RiftRelay(registry),
 ) {
-    private val known = setOf("/ping", "/register", "/robots", "/peers", "/mode", "/")
+    private val known = setOf("/ping", "/register", "/robots", "/peers", "/mode", "/", "/fleet", "/clock",
+                              "/talk", "/cameras", "/colour_scheme.css")
 
     /**
      * A registration or mode change: app.py reads a form body; the Android app's
@@ -166,8 +178,8 @@ class RiftRoutes(
         val f = fields(contentType, body, params)
         val mode = f["mode"].orEmpty().trim().lowercase()
         val btPort = f["bt_port"].orEmpty().trim()
-        if (mode != "wifi" && mode != "bluetooth")
-            return json(400, J.obj("error" to J.str("mode must be 'wifi' or 'bluetooth'")))
+        if (mode != "hub" && mode != "wifi" && mode != "bluetooth")
+            return json(400, J.obj("error" to J.str("mode must be 'hub', 'wifi' or 'bluetooth'")))
         if (mode == "bluetooth" && btPort.isEmpty())
             return json(400, J.obj("error" to J.str("bt_port is required for Bluetooth mode")))
         authority.restart(mode, btPort)
@@ -193,12 +205,18 @@ class RiftRoutes(
             json(200, J.obj("mode" to J.str(mode), "bt_port" to J.nullOrStr(btPort)))
         }
         method == "POST" && path == "/mode" -> setMode(contentType, body, params)
-        method == "GET" && path == "/" -> {
-            val tpl = assets.template()
-            if (tpl == null) Reply(500, "text/plain", "dashboard template not found")
+        method == "GET" && (path == "/" || path == "/cameras") -> {
+            val tpl = assets.page(if (path == "/") "index.html" else "cameras.html")
+            if (tpl == null) Reply(if (path == "/") 500 else 404, "text/plain", "dashboard template not found")
             else Reply(200, "text/html; charset=utf-8", renderTemplate(tpl, mapOf(
                 "this_name" to cfg.name, "my_ip" to cfg.ip, "this_port" to cfg.port.toString())))
         }
+        method == "GET" && path == "/fleet" -> json(200, relay.fleetJson())
+        method == "GET" && path == "/clock" -> json(200, J.obj("t" to "%.3f".format(java.util.Locale.ROOT, System.currentTimeMillis() / 1000.0)))
+        method == "GET" && path == "/colour_scheme.css" -> Reply(200, "text/css", colourSchemeCss(assets.colours()))
+        // GET /talk is the robots' Brainfuck conversations, which only RIFT's PC holds: a 404
+        // hides that dashboard section. POST /talk's ask / do (the "Ask & tell" panel) works here.
+        method == "POST" && path == "/talk" -> relay.talk(body).let { (code, out) -> json(code, out) }
         method == "GET" && path.startsWith("/static/") -> serveStatic(path.removePrefix("/static/"))
         path in known -> Reply(405, "text/plain", "Method Not Allowed")
         else -> Reply(404, "text/plain", "Not found")

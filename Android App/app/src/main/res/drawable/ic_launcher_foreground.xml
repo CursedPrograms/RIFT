@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launcher shows the middle 72 of the icon's 108 dp: inset so her face stays in view -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/rift_avatar"
+    android:inset="12%" />

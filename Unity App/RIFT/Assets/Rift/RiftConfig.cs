@@ -56,7 +56,8 @@ namespace Rift
                 if (string.IsNullOrEmpty(start)) continue;
                 for (var dir = new DirectoryInfo(start); dir != null; dir = dir.Parent)
                 {
-                    if (File.Exists(Path.Combine(dir.FullName, "app.py")) &&
+                    // the repo (app.py), or the copy a built app carries (.rift_root, see Editor/BuildRift.cs)
+                    if ((File.Exists(Path.Combine(dir.FullName, "app.py")) || File.Exists(Path.Combine(dir.FullName, ".rift_root"))) &&
                         File.Exists(Path.Combine(dir.FullName, "templates", "index.html")))
                         return dir.FullName;
                 }

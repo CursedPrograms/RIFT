@@ -1,7 +1,7 @@
 // NetworkDiscovery.kt - the HTTP server (NanoHTTPD) and RiftHub, which ties
 // the registry, routes, mDNS and NORA heartbeat together. Pure JVM (no Android
 // imports) so it runs and is tested off-device; RiftService hosts it on a phone.
-package com.example.riftcontrol
+package com.cursedentertainment.rift
 
 import fi.iki.elonen.NanoHTTPD
 
@@ -58,7 +58,7 @@ class RiftHub(
             val err = mdns.start()
             if (err != null) log("[RIFT] mDNS disabled: $err")
         }
-        authority.restart("wifi", "")
+        authority.restart("hub", "")   // app.py's default; the dashboard can switch to wifi / bluetooth
         return null
     }
 

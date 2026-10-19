@@ -7,7 +7,7 @@
 // than Android's NsdManager so the same code runs (and is testable) on a JVM;
 // on a phone the Activity holds a WifiManager.MulticastLock so the radio
 // actually delivers the packets.
-package com.example.riftcontrol
+package com.cursedentertainment.rift
 
 import java.io.ByteArrayOutputStream
 import java.net.DatagramPacket

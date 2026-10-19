@@ -55,3 +55,5 @@ Unity App/RIFT/*.sln
 # The fleet mission diary (Fleet/mission.py) - local to each RIFT
 mission_log.json
 mission_log.json.tmp
+Unity App/RIFT/Assets/StreamingAssets/
+Unity App/RIFT/Assets/StreamingAssets.meta

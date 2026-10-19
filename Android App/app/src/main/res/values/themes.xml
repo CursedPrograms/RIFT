@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- @color/rift_* come from RIFT's colour_scheme.xml (generated at build time, app/build.gradle.kts) -->
+    <style name="Theme.Rift" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/rift_background</item>
+        <item name="android:statusBarColor">@color/rift_background</item>
+        <item name="android:navigationBarColor">@color/rift_background</item>
+        <item name="android:colorPrimary">@color/rift_panel</item>
+        <item name="android:colorAccent">@color/rift_accent</item>
+        <item name="android:textColorPrimary">@color/rift_text</item>
+        <item name="android:textColorSecondary">@color/rift_text_sec</item>
+    </style>
+</resources>

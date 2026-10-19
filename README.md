@@ -1,3 +1,5 @@
+<p align="center"><img src="images/avatar_round.png" width="160" alt="RIFT"></p>
+
 [![Twitter: @NorowaretaGemu](https://img.shields.io/badge/X-@NorowaretaGemu-blue.svg?style=flat)](https://x.com/NorowaretaGemu)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -283,7 +285,7 @@ g++ registration.cpp -o registration.exe -lcurl
 
 `app.py` is the reference fleet hub. `PC App/Go`, `PC App/Rust`, `PC App/FSharp` (.NET 8) and `PC App/Julia` are complete, cross-platform re-implementations of it - the same protocol on the same port `5000`, so run **one** hub per machine, whichever language you prefer. Each one has:
 
-- the fleet registry: `POST /register` (form body, or the JSON that `Android App/Registration.kt` sends), `GET /robots` (entries expire after 20 s without a heartbeat), `GET /ping`
+- the fleet registry: `POST /register` (form body, or the JSON that `Android App/examples/Registration.kt` sends), `GET /robots` (entries expire after 20 s without a heartbeat), `GET /ping`
 - `GET /peers`, plus mDNS publish/browse of `_rift._tcp` and DREAM's `_flask-link._tcp`, so hubs (and DREAM) find each other
 - `GET`/`POST /mode`: the WiFi/Bluetooth connection mode, and the NORA fleet-authority heartbeat that goes with it (HTTP to `192.168.4.1:5000`, or `H<name>:<caps>` over a Bluetooth serial port)
 - the same dashboard: `templates/index.html` and `static/` are served as they are, no template engine needed
@@ -312,12 +314,21 @@ All four were checked against the same protocol test suite and against each othe
 The same protocol (`/ping`, `/register`, `/robots`, `/peers`, `/mode`, dashboard, `/static`, NORA heartbeat) is also implemented in:
 
 - **`PC App/App` (C++)** - Windows + Linux, no Avahi/curl/nlohmann needed. Build with `build.sh` / `build.bat` (Windows links statically so the exe runs from any shell).
-- **`Unity App/RIFT/Assets/Rift`** - a hub that starts automatically on scene load (`Assets/main.cs` exposes name/port/NORA settings and an on-screen panel). Bluetooth mode needs the project's *Api Compatibility Level* set to *.NET Framework*.
-- **`Android App/`** - Kotlin. `RiftCore.kt`, `RiftMdns.kt`, `RiftAuthority.kt` and `NetworkDiscovery.kt` are plain JVM (NanoHTTPD + `org.json`); `RiftAndroid.kt` adds the foreground service, activity and Bluetooth link. To use: add `org.nanohttpd:nanohttpd:2.3.1` to Gradle, copy `templates/index.html` to `app/src/main/assets/templates/` and `static/` to `app/src/main/assets/static/`, and declare the permissions/activity/service listed at the top of `RiftAndroid.kt`. In Bluetooth mode `bt_port` is NORA's paired MAC address.
+- **`Unity App/RIFT`** - the hub as an app (Unity 6000.6.2f1). It starts by itself, with a panel showing a card per robot (its page, and STOP for robots that take `do:stop`), the other hubs, the log, and settings kept between runs (name, port, NORA's address, heartbeat / mDNS / internet share). Build it from the editor's **RIFT** menu (Build Windows / Android / Linux), or without opening it: `build_unity.bat` (Windows, or `build_unity.bat Android`) / `./build_unity.sh` (Linux); builds land in `Unity App/RIFT/Builds`. A build carries its own copy of `templates/`, `static/` and the colours (packed into StreamingAssets at build time), so it runs anywhere. The hub code is plain C# in `Assets/Rift`. Bluetooth mode needs the project's *Api Compatibility Level* set to *.NET Framework*.
+- **`Android App/`** - the **RIFT app** for Android 8+ (Kotlin, an Android Studio / Gradle project). The phone runs the hub as a foreground service; the app has an on/off switch, the hub's address (tap to copy), the fleet list, a settings button (name, port) and RIFT's dashboard underneath, served by the phone itself. Besides the protocol above it serves `/fleet`, `/clock`, `/colour_scheme.css`, `/cameras` and the dashboard's **Ask & tell** (`POST /talk` with `ask` / `do`, with `Fleet/relay.py`'s safety tiers; it relays to robots that register `do:<action>`). Conversations, music, the mission log and `/near` stay on RIFT's PC: the dashboard hides those sections. The hub code (`RiftCore.kt`, `RiftRelay.kt`, `RiftMdns.kt`, `RiftAuthority.kt`, `NetworkDiscovery.kt` in `app/src/main/java/com/cursedentertainment/rift/`) is plain JVM; `RiftAndroid.kt` adds the service, the screen and the Bluetooth link (in Bluetooth mode `bt_port` is NORA's paired MAC address). Every build copies `templates/`, `static/` and `colour_scheme.xml` into the app, and makes its colours and icon from `colour_scheme.xml` and `images/rift_avatar.jpg`, so nothing is copied by hand.
 
-`Registration.kt` posts JSON, which every hub above accepts (only the original `app.py` is form-only).
+  **Build and install**: open `Android App` in Android Studio and press Run, or from a terminal (JDK 17):
+  ```bash
+  cd "Android App"
+  gradlew assembleDebug                                  # ./gradlew on Linux/macOS
+  adb install -r app/build/outputs/apk/debug/app-debug.apk
+  gradlew test                                           # the hub core's 28 protocol tests, on the PC
+  ```
+  Android Studio writes `local.properties` (the SDK path); from a terminal create it yourself with `sdk.dir=C:/Users/<you>/AppData/Local/Android/Sdk`, or set `ANDROID_HOME`.
 
-Verified: the C++, Unity (C# on a desktop runtime with Unity stubs) and Android (core on a JVM) hubs pass the same 32-check protocol suite and interoperate over mDNS/heartbeat with the Go/Rust/F#/Julia hubs. Not run on real hardware: Linux-only code paths, Bluetooth, internet sharing, and the Android service/activity (`RiftAndroid.kt` was only compile-checked against an old android.jar, which lacks the API 26 calls).
+`Android App/examples/Registration.kt` (an example robot registering itself) posts JSON, which every hub above accepts (only the original `app.py` is form-only).
+
+Verified: the C++, Unity (C# on a desktop runtime with Unity stubs) and Android (core on a JVM) hubs pass the same 32-check protocol suite and interoperate over mDNS/heartbeat with the Go/Rust/F#/Julia hubs. Not run on real hardware: Linux-only code paths, Bluetooth, internet sharing, and the Android app on a phone (it builds against API 34 and its hub core passes `gradlew test`, but hasn't been installed on a device yet).
 
 ## 📡 Who's nearby (ESP-NOW + Bluetooth LE)
 
