@@ -55,6 +55,7 @@
 - [WHIP-Robot-v00](https://github.com/CursedPrograms/WHIP-Robot-v00)
 - [DREAM](https://github.com/CursedPrograms/DREAM)
 - [ARM-Robot-v01](https://github.com/CursedPrograms/ARM-Robot-v01)
+- [RITA](https://github.com/CursedPrograms/RITA)
 
 ---
 
@@ -396,4 +397,5 @@ RIFT gathers every robot's `/near` into one picture at `GET /near` and the dashb
 
 **Minds** — [DREAM](https://github.com/CursedPrograms/DREAM) companion · [TINA](https://github.com/CursedPrograms/TINA) engineer · [NINA](https://github.com/CursedPrograms/NINA) caretaker · [RIFT](https://github.com/CursedPrograms/RIFT) fleet hub · [LYCEA](https://github.com/CursedPrograms/LYCEA) training school  
 **Robots** — [NORA](https://github.com/CursedPrograms/NORA-Robot-v00) · [MILA](https://github.com/CursedPrograms/MILA-Robot-v00) · [WHIP](https://github.com/CursedPrograms/WHIP-Robot-v00) · [KIDA-00](https://github.com/CursedPrograms/KIDA-Robot-v00) · [KIDA-01](https://github.com/CursedPrograms/KIDA-Robot-v01) · [IDA](https://github.com/CursedPrograms/IDA-Robot-v00) · [ARM](https://github.com/CursedPrograms/ARM-Robot-v01)   
+**Remotes** — [RITA](https://github.com/CursedPrograms/RITA) handheld remote  
 <!-- DREAM-ECOSYSTEM:END -->
