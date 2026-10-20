@@ -30,7 +30,7 @@ class Board:
 @pytest.mark.parametrize("action,level", [
     ("music_stop", "harmless"), ("scan", "harmless"), ("lock_wheels", "harmless"), ("stop", "harmless"),
     ("forward", "moving"), ("joint", "moving"), ("rest", "moving"),
-    ("unlock", "never"), ("motorlock_off", "never"), ("motorlockOff", "never"), ("reboot", "never"), ("pin", "never"),
+    ("unlock", "never"), ("motorlock_off", "never"), ("motor_lock_off", "never"), ("motorlockOff", "never"), ("reboot", "never"), ("pin", "never"),
 ])
 def test_tiers(action, level):
     assert relay.tier(action) == level
@@ -202,3 +202,31 @@ def test_mission_log_is_private(fleet):
 
 
 from conftest import REAL_LOG as REAL  # noqa: E402
+
+
+def test_kida01_mapping(fleet, slept):
+    me = fleet.robot("kida01")
+    # music_on is already true: pressing play would skip the song, so it's skipped
+    code, out = relay.do([me], "KIDA01", "music_play")
+    assert code == 200 and out["answer"]["skipped"]
+    relay.do([me], "KIDA01", "photo")
+    relay.do([me], "KIDA01", "lock_wheels")
+    posts = [h[3] for h in fleet.hits if h[1] == "POST"]
+    assert posts == [{"command": "photo"}, {"command": "motor_lock_on"}]
+
+
+def test_kida01_drive_feeds_her_dead_man_switch(fleet, slept):
+    fleet.hits.clear()
+    code, out = relay.do([fleet.robot("kida01")], "KIDA01", "forward", {"seconds": 1.0}, confirmed=True)
+    assert code == 200 and out["answer"]["moved_s"] == 1.0
+    cmds = [h[3]["command"] for h in fleet.hits]
+    # the go every 0.3 s (her switch stops her 0.8 s after the last), then the stop
+    assert cmds == ["move_forward"] * 4 + ["move_stop"]
+    assert sum(slept) == pytest.approx(1.0)
+
+
+def test_kida01_moves_ask_and_never_unlocks(fleet):
+    code, out = relay.do([fleet.robot("kida01")], "KIDA01", "mind_mode")
+    assert out["tier"] == "moving" and not out["ok"]
+    code, out = relay.do([fleet.robot("kida01")], "KIDA01", "motor_lock_off", confirmed=True)
+    assert code == 403 and out["tier"] == "never"

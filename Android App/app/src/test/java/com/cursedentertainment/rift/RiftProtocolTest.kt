@@ -229,6 +229,7 @@ class RiftProtocolTest {
         assertEquals("moving", RiftRelay.tier("forward"))
         assertEquals("moving", RiftRelay.tier("something_new"))       // unknown counts as moving
         assertEquals("never", RiftRelay.tier("motorlock_off"))
+        assertEquals("never", RiftRelay.tier("motor_lock_off"))
         assertEquals("never", RiftRelay.tier("reboot"))
     }
 

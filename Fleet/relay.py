@@ -9,8 +9,8 @@ Three verbs for the whole fleet (TODO.md section 1); this is ask and do:
 ask  GETs the robot's /status (NORA's is /sensors) and says what it can do.
 do   POSTs {"action", ...} to the robot's /do if it registered "do:<action>"
      capabilities (one per action, e.g. "do:music_stop"); robots without /do yet
-     get RIFT's own mapping onto the API they already have (ADAPTERS: NORA, KIDA00, ARM, and IDA
-     over IR through NORA or RIFT's own board).
+     get RIFT's own mapping onto the API they already have (ADAPTERS: NORA, KIDA00, KIDA01, ARM,
+     and IDA over IR through NORA or RIFT's own board).
      Every ask answer has "core": mode, moving, music, distances_cm, the same for all.
 
 Safety tiers: harmless actions go ahead; anything else may move the robot, so the
@@ -32,11 +32,12 @@ MAX_DRIVE_S = 3.0      # a timed drive never runs longer than this
 HARMLESS = {"stop", "status", "scan", "lock_wheels", "photo", "sleep", "wake", "dance_stop", "manual_mode",
             "music_play", "music_next", "music_prev", "music_stop", "music_pause", "music_resume",
             "uv_on", "uv_off", "uv_blink", "lights_on", "lights_off", "sound", "chirp"}
-NEVER = re.compile(r"unlock|password|pin\b|motorlock_?off|shutdown|reboot|flash", re.I)
+NEVER = re.compile(r"unlock|password|pin\b|motor_?lock_?off|shutdown|reboot|flash", re.I)
 
 # Robots that don't take POST /do yet: RIFT maps the actions onto their own API.
 # A route is "/path" (GET) or ("/path", {json}) (POST). An action is a route,
-# {"go": route, "then": route} for a timed move (go, wait "seconds", then), or
+# {"go": route, "then": route} for a timed move (go, wait "seconds", then; with "every": s the
+# go is resent that often, for robots whose drives stop by themselves without it), or
 # {"route": route, "skip_if": (key, value)} to skip it when the status already says so.
 ADAPTERS = {
     "NORA": {
@@ -66,6 +67,31 @@ ADAPTERS = {
             "turn_right": {"go": ("/command", {"command": "right"}), "then": ("/command", {"command": "stop"})},
         },
         "note": "drives best in USER mode: AUTONOMOUS / LINE / QR steer her themselves",
+    },
+    # Her web dashboard's POST /action (scripts/web_bridge.py). Drives work in her KEYBOARD mode
+    # and stop by themselves 0.8 s after the last one (a dead-man switch), so they're resent every
+    # 0.3 s. Unlocking her motors is never relayed (motor_lock_off is in NEVER).
+    "KIDA01": {
+        "does": {
+            "stop": ("/action", {"command": "move_stop"}),
+            "lock_wheels": ("/action", {"command": "motor_lock_on"}),
+            "music_play": {"route": ("/action", {"command": "music_play"}), "skip_if": ("music_on", True)},
+            "music_next": ("/action", {"command": "music_skip"}),
+            "music_stop": ("/action", {"command": "music_stop"}),
+            "photo": ("/action", {"command": "photo"}),
+            "sleep": ("/action", {"command": "mode_4"}), "wake": ("/action", {"command": "mode_1"}),
+            "manual_mode": ("/action", {"command": "mode_1"}),
+            "obstacle_mode": ("/action", {"command": "mode_3"}),
+            "follow_me": ("/action", {"command": "mode_8"}),
+            "mind_mode": ("/action", {"command": "mode_9"}),
+            "go_home": ("/action", {"command": "go_home"}),
+            "forward": {"go": ("/action", {"command": "move_forward"}), "then": ("/action", {"command": "move_stop"}), "every": 0.3},
+            "back": {"go": ("/action", {"command": "move_backward"}), "then": ("/action", {"command": "move_stop"}), "every": 0.3},
+            "turn_left": {"go": ("/action", {"command": "move_left"}), "then": ("/action", {"command": "move_stop"}), "every": 0.3},
+            "turn_right": {"go": ("/action", {"command": "move_right"}), "then": ("/action", {"command": "move_stop"}), "every": 0.3},
+        },
+        "note": "drives only in her KEYBOARD mode (manual_mode) and not while her motors are locked; "
+                "mind_mode works only while a mind can drive her (her options: Mind / Where)",
     },
     # IR only: through NORA's IR transmitter (/ida), or RIFT's own board when NORA's away.
     # One-way: she never answers, so there's no status and no telling whether she heard.
@@ -294,7 +320,12 @@ def _adapted(robot, action, args):
     if code >= 400:
         return code, answer
     try:
-        time.sleep(seconds)
+        every, waited = route.get("every") or seconds, 0.0
+        while seconds - waited > every:     # keep her dead-man switch fed
+            time.sleep(every)
+            waited += every
+            _call(base, route["go"])
+        time.sleep(seconds - waited)
     finally:
         _call(base, route["then"])     # always stop, even if the wait was cut short
     return code, {"ok": True, "moved_s": seconds, "answer": answer}

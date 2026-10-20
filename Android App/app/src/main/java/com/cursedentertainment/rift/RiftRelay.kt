@@ -42,7 +42,7 @@ class RiftRelay(private val registry: RiftRegistry, private val http: HttpCall =
         val HARMLESS = setOf("stop", "status", "scan", "lock_wheels", "photo", "sleep", "wake", "dance_stop", "manual_mode",
                              "music_play", "music_next", "music_prev", "music_stop", "music_pause", "music_resume",
                              "uv_on", "uv_off", "uv_blink", "lights_on", "lights_off", "sound", "chirp")
-        val NEVER = Regex("""unlock|password|pin\b|motorlock_?off|shutdown|reboot|flash""", RegexOption.IGNORE_CASE)
+        val NEVER = Regex("""unlock|password|pin\b|motor_?lock_?off|shutdown|reboot|flash""", RegexOption.IGNORE_CASE)
         const val PHONE_NOTE = "the phone hub relays only to robots with their own POST /do; RIFT's PC maps the others"
 
         fun tier(action: String) = when {
