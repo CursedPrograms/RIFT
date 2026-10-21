@@ -81,6 +81,8 @@ def _server():
             return jsonify(out), code
         if path == "do":
             return jsonify({"ok": True, "did": body.get("action")})
+        if path.startswith("motorlock") and st.get("old_firmware"):   # no WiFi lock yet
+            return "Not found", 404
         return "OK"
 
     @app.route("/music", methods=["POST"])

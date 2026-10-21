@@ -13,8 +13,9 @@ def test_lock_all_reaches_every_robot(fleet, monkeypatch):
     assert "/motorlockOn" in fleet.paths("nora")
     assert "/motorlockOn" in fleet.paths("kida00")
     assert ("kida01", "POST", "/action", {"command": "motor_lock_on"}) in fleet.hits
+    assert "/motorlockOn" in fleet.paths("mila")          # online: her own WiFi lock
     ir = sorted(h[3] for h in fleet.hits if h[0] == "nora" and h[2] == "/link")
-    assert ir == ["r=ida&c=lock", "r=mila&c=lock", "r=nika&c=lock", "r=whip&c=lock"]
+    assert ir == ["r=ida&c=lock", "r=nika&c=lock", "r=whip&c=lock"]   # IDA, and the two offline
     assert {r["robot"] for r in out["robots"] if r["ok"]} == {"NORA", "KIDA00", "KIDA01", "IDA", "MILA", "WHIP", "NIKA"}
     assert "locked the whole fleet" in mission.snapshot()["entries"][-1]["text"]
 
@@ -50,3 +51,12 @@ def test_relay_still_never_unlocks(fleet):
 
 def test_bad_action(fleet):
     assert locks.apply([], "explode")[0] == 400
+
+
+def test_old_firmware_falls_back_to_ir(fleet, monkeypatch):
+    monkeypatch.setattr(relay, "board", None)
+    fleet.state["mila"]["old_firmware"] = True
+    code, out = locks.apply([fleet.robot("nora"), fleet.robot("mila")], "unlock", locks.FLEET_PIN)
+    mila = next(r for r in out["robots"] if r["robot"] == "MILA")
+    assert mila["ok"] and mila["how"] == "IR through NORA"
+    assert ("nora", "GET", "/link", "r=mila&c=unlock") in fleet.hits
