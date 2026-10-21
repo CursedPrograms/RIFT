@@ -190,6 +190,10 @@ RIFT has the robots chat: every 25–60 s it picks two that can talk and has the
 
 RIFT conducts: `POST /music {"action": "play", "track": 100}` and every player starts the same song at the same moment. RIFT picks a start 4 s ahead on its own clock and sends each player `POST /music {"action", "track", "at"}`. Each player sets its clock by RIFT's (`GET /clock`), loads the song, and starts exactly then, so a slow network doesn't put them out of step. `pause`, `resume` and `stop` work the same way, and `GET /music` lists the players and the last command.
 
+### Wheel locks
+
+The dashboard's **Wheel locks** section locks every robot's wheels (WHIP's legs) at once, like an e-stop, and unlocks them all with the fleet PIN (`RIFT_FLEET_PIN`, `1234` by default). `POST /locks {"action": "lock"}` needs nothing; `{"action": "unlock", "pin": "1234"}` checks the PIN first and passes it on to each robot as hers. NORA and KIDA-00 get `/motorlockOff?pw=`, KIDA-01 her `/action` `motor_lock_off`, and IDA, MILA, WHIP and NIKA hear it over IR through NORA's `/link` (or RIFT's own board when NORA's away), one way, so they can't say whether it arrived. ARM has no wheel lock. Unlocking stays a person at the dashboard: `/talk`'s relay still never sends one (`Fleet/locks.py`). Only the Python hub has it; the section hides on the others.
+
 - **Players** register the capability `music:<port>`. TINA plays along now (started 0.4 ms after the set moment in the first test); KIDA00, KIDA01 and NORA are next.
 - **Tracks** are numbered the same everywhere: the number in the file name, as on NORA's SD card (`NORA-Robot-v00/music`: `Track000.mp3`, `Track100.mp3`, ...).
 - Code: `Fleet/music.py`.
@@ -211,7 +215,7 @@ An Arduino UNO on the hub PC ([`arduino/rift_link`](arduino/rift_link/rift_link.
 RIFT finds the board by the fleet handshake (`WHO` → `I am Rift`), 25 s after it starts and only on ports nobody else has open, so it never steals ARM's or DREAM's board. Without the board everything below just answers `503`.
 
 - `GET /board`: connected or not, its port, the last IR frames heard
-- `GET /board/link?r=ida&c=fw`: drive a robot (`fw bw left right stop auto manual speed`)
+- `GET /board/link?r=ida&c=fw`: drive a robot (`fw bw left right stop auto manual speed`, and `lock` / `unlock` its wheels)
 - `GET /board/say?r=mila&p=0`: beep a phrase (0-6), then send it to that robot over IR
 - `GET /board/talk?u=7`: beep a Brainfuck utterance (0-13)
 

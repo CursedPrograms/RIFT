@@ -295,6 +295,35 @@ document.getElementById('tellBtn').addEventListener('click', () => {
 fillRobots();
 setInterval(fillRobots, 10000);
 
+// ── Wheel locks (POST /locks: Fleet/locks.py) ───────────────────────────
+
+const lockOut = document.getElementById('lockOut');
+const lockPin = document.getElementById('lockPin');
+
+function lockFleet(action) {
+    lockOut.textContent = action === 'lock' ? 'locking everyone...' : 'unlocking everyone...';
+    fetch('/locks', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action, pin: lockPin.value }) })
+        .then(r => r.json()).then(d => {
+            if (!d.robots) { lockOut.innerHTML = `<span class="bad">${esc(d.error || 'RIFT said no')}</span>`; return; }
+            lockOut.innerHTML = d.robots.map(r => r.ok
+                ? `${esc(r.robot)}: <b>${action}ed</b> (${esc(r.how)}${r.said ? ', ' + esc(r.said) : ''})`
+                : `<span class="bad">${esc(r.robot)}: ${esc(r.said || 'no')}</span>`).join('
+');
+            if (action === 'unlock') lockPin.value = '';
+            refreshMission();
+        }).catch(() => { lockOut.innerHTML = "<span class='bad'>RIFT didn't answer.</span>"; });
+}
+
+document.getElementById('lockAll').addEventListener('click', () => lockFleet('lock'));
+document.getElementById('unlockAll').addEventListener('click', () => {
+    if (!lockPin.value) { lockOut.textContent = 'Type the fleet PIN first.'; lockPin.focus(); return; }
+    lockFleet('unlock');
+});
+lockPin.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('unlockAll').click(); });
+// only RIFT's Python hub has /locks: elsewhere (the C++ / Go / Rust / Julia / F# hubs, the app) the section hides
+fetch('/locks').then(r => hideIfMissing(r, 'lockSection')).catch(() => {});
+
 // ── Music together (POST /music: Fleet/music.py) ────────────────────────
 
 const musicOut = document.getElementById('musicOut');

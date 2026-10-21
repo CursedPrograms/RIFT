@@ -34,6 +34,17 @@
         <div id="robots" class="grid"><p class="empty">No robots online yet.</p></div>
     </section>
 
+    <section id="lockSection">
+        <h3>Wheel locks</h3>
+        <p class="hint">Every robot at once: locked, nothing drives them. Unlocking needs the fleet PIN. MILA, WHIP, NIKA and IDA hear it over IR, so they can't say whether it arrived.</p>
+        <div class="mode-row">
+            <button id="lockAll">&#128274; Lock all</button>
+            <input type="password" id="lockPin" placeholder="PIN" inputmode="numeric" autocomplete="off">
+            <button id="unlockAll">&#128275; Unlock all</button>
+        </div>
+        <div id="lockOut" class="relay-out"></div>
+    </section>
+
     <section id="tellSection">
         <h3>Ask &amp; tell</h3>
         <p class="hint">Ask a robot how it is, or tell it to do something (RIFT relays it and notes it in the mission log). Anything that moves a robot asks you first.</p>

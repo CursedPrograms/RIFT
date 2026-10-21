@@ -17,7 +17,7 @@ from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser
 
 from Fleet.register import start_fleet_authority
 from Fleet.internet_share import start_internet_share
-from Fleet import conversations, mission, music, relay
+from Fleet import conversations, locks, mission, music, relay
 from Fleet.rift_board import RiftBoard
 from Fleet.bt_autopair import start_autopair
 from Fleet import near_map
@@ -291,6 +291,23 @@ def _whole_fleet():
 @app.route("/fleet")
 def fleet():
     return jsonify({"robots": _whole_fleet()})
+
+
+# ── Every robot's wheel lock at once (Fleet/locks.py) ───────────────────────
+# POST /locks {"action": "lock"}                   lock them all (no PIN)
+# POST /locks {"action": "unlock", "pin": "1234"}  the fleet PIN: a person at the dashboard
+
+@app.route("/locks")
+def fleet_locks_info():   # the dashboard shows its Wheel locks section when this answers
+    return jsonify({"wifi": sorted(locks.HTTP_LOCKS), "ir": list(locks.IR_LOCKS)})
+
+
+@app.route("/locks", methods=["POST"])
+def fleet_locks():
+    data = request.get_json(silent=True) or {}
+    code, out = locks.apply(_whole_fleet(), data.get("action"), data.get("pin", ""),
+                            str(data.get("from") or "RIFT dashboard")[:24])
+    return jsonify(out), code
 
 
 # ── Mission log ─────────────────────────────────────────────────────────────

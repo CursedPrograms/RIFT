@@ -17,8 +17,8 @@
  * SERIAL (115200 baud, one command per line)
  *   WHO                 -> "I am Rift"   (the fleet-wide handshake)
  *   LINK:<r>:<c>        send a fleet link command over IR, like NORA's /link:
- *                         r = IDA MILA WHIP KIDA (or I M W K)
- *                         c = fw bw left right stop auto manual speed
+ *                         r = IDA MILA WHIP KIDA NIKA (or I M W K N)
+ *                         c = fw bw left right stop auto manual speed unlock lock
  *                       -> "OK" / "ERR"
  *   SAY:<r>:<p>         send phrase p (0-6: hello, how are you, happy, curious,
  *                       sleepy, play, bye) to robot r over IR, after beeping it
@@ -44,6 +44,9 @@
 #define MILA_LINK_ADDRESS 0x0DA2
 #define WHIP_LINK_ADDRESS 0x0DA3
 #define KIDA_LINK_ADDRESS 0x0DA4
+#define NIKA_LINK_ADDRESS 0x0DA5
+#define LINK_UNLOCK 0x50   // the wheel lock, as NORA's: one frame, no PIN
+#define LINK_LOCK   0x51
 #define TALK_FIRST 0x40
 
 const uint8_t RIFT_VOICE_PCT = 70;   // the hub's voice: lower than every robot
@@ -59,6 +62,7 @@ uint16_t robotAddress(String r) {
   if (r == "MILA" || r == "M") return MILA_LINK_ADDRESS;
   if (r == "WHIP" || r == "W") return WHIP_LINK_ADDRESS;
   if (r == "KIDA" || r == "K") return KIDA_LINK_ADDRESS;
+  if (r == "NIKA" || r == "N") return NIKA_LINK_ADDRESS;
   return 0;
 }
 
@@ -67,6 +71,8 @@ int linkCode(String c) {
   const char* names[] = { "fw", "bw", "left", "right", "stop", "auto", "manual", "speed" };
   for (int i = 0; i < 8; i++)
     if (c == names[i]) return 0x48 + i;
+  if (c == "unlock") return LINK_UNLOCK;
+  if (c == "lock") return LINK_LOCK;
   return -1;
 }
 
