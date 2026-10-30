@@ -7,7 +7,7 @@
 // powers a robot down is ever relayed. relay.py also maps actions onto the APIs of
 // robots without their own POST /do (NORA's web API, KIDA00's Flask...); the phone
 // relays only to robots that registered "do:<action>" capabilities.
-package com.cursedentertainment.rift
+package com.synthwomb.rift
 
 import org.json.JSONObject
 import org.json.JSONTokener

@@ -3,7 +3,7 @@
 // counterpart of Fleet/register.py + Fleet/bt_link.py: while RIFT keeps
 // heartbeating, NORA defers her /robots response to point at RIFT; if it stops,
 // the registration simply expires on her side.
-package com.cursedentertainment.rift
+package com.synthwomb.rift
 
 import java.net.HttpURLConnection
 import java.net.URL

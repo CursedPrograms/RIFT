@@ -1,7 +1,7 @@
 // NetworkDiscovery.kt - the HTTP server (NanoHTTPD) and RiftHub, which ties
 // the registry, routes, mDNS and NORA heartbeat together. Pure JVM (no Android
 // imports) so it runs and is tested off-device; RiftService hosts it on a phone.
-package com.cursedentertainment.rift
+package com.synthwomb.rift
 
 import fi.iki.elonen.NanoHTTPD
 

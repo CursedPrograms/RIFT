@@ -1,7 +1,7 @@
 // RiftProtocolTest.kt - the phone hub's core on a plain JVM, over real HTTP: the same
 // wire protocol as app.py (registry, dashboard, /fleet, /talk ask / do with relay.py's
 // safety tiers), against RIFT's own templates/ and static/. Run: gradlew test
-package com.cursedentertainment.rift
+package com.synthwomb.rift
 
 import fi.iki.elonen.NanoHTTPD
 import org.json.JSONObject

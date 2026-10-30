@@ -114,6 +114,8 @@ ADAPTERS = {
     # while she stands still, and she refuses it (403 / 409) while driving or in obstacle mode.
     "MILA": {"does": {"scan": "/scan"},
              "note": "scan only: driving her needs the PIN (/unlock), which RIFT never sends"},
+    # ARIA the drone: the fleet can ask and hear her, nothing flies her (ARIA-Robot-v00 aria_fleet.c)
+    "ARIA": {"does": {}, "note": "ask only: she can't be flown from the fleet"},
     "WHIP": {"does": {}, "note": "ask only: /web and /mode need the PIN (/unlock), which RIFT never sends"},
     # NIKA runs MILA's firmware (NIKA-Robot-v00), with her /scan
     "NIKA": {"does": {"scan": "/scan"},
@@ -139,6 +141,8 @@ def core(name, status):
         if s.get("scan_ms", -1) >= 0:          # her last SCAN: left / front / right, and how old it is
             out["scan"] = {"left": s.get("scan_l"), "front": s.get("scan_f"), "right": s.get("scan_r"),
                            "age_s": round(s["scan_ms"] / 1000, 1)}
+    elif n == "ARIA":
+        out.update(flying=s.get("flying"), battery_v=s.get("battery_v"))
     elif n == "WHIP":
         out.update(mode=pick(["obstacle", "ir", "web"], s.get("controlMode")),
                    moving=s["move"] != 0 if "move" in s else None,

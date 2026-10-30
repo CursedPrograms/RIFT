@@ -5,7 +5,7 @@
 //
 // The dashboard files (templates/, static/, colour_scheme.xml), the colours and the
 // launcher icon all come from RIFT's folders at build time (app/build.gradle.kts).
-package com.cursedentertainment.rift
+package com.synthwomb.rift
 
 import android.Manifest
 import android.annotation.SuppressLint

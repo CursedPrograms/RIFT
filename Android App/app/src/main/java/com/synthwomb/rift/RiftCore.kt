@@ -5,7 +5,7 @@
 // app.py's _fleet/_peers dicts and Flask routes - same wire protocol, so
 // PC App/PyGame/registration.py, PC App/App/registration.cpp and every robot's
 // heartbeat work unchanged.
-package com.cursedentertainment.rift
+package com.synthwomb.rift
 
 import org.json.JSONArray
 import org.json.JSONException

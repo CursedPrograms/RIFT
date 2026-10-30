@@ -59,6 +59,7 @@ PERSONALITIES = {
     "KIDA":      {"chattiness": 3, "likes": [3, 2, 5], "about": "curious, always asking about things"},
     "MILA":      {"chattiness": 2, "likes": [5, 2, 0], "about": "playful little tank"},
     "NIKA":      {"chattiness": 2, "likes": [3, 5, 2], "about": "a little tank who thinks in square waves"},
+    "ARIA":      {"chattiness": 2, "likes": [5, 2, 0], "about": "the fleet's drone, light and curious, happiest in the air"},
     "WHIP":      {"chattiness": 1, "likes": [3, 0],    "about": "quiet, watchful hexapod"},
     "ARM":       {"chattiness": 1, "likes": [1, 2],    "about": "polite and precise"},
     "DREAM":     {"chattiness": 2, "likes": [4, 1, 6], "about": "DREAM: deep, dreamy, a bit sleepy"},

@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.cursedentertainment.rift"
+    namespace = "com.synthwomb.rift"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.cursedentertainment.rift"
+        applicationId = "com.synthwomb.rift"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
