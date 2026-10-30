@@ -338,6 +338,7 @@ class RiftActivity : Activity() {
         root.addView(web, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
         root.addView(placeholder, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
         setContentView(root)
+        showSplash()
     }
 
     @Deprecated("Deprecated in Java")
