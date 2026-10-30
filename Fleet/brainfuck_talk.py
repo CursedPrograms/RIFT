@@ -46,6 +46,7 @@ SKETCHES = [
     "NORA-Robot-v00/scripts/esp32",
     "IDA-Robot-v00/IDA-Robot-v00/scripts/IDA",
     "MILA/scripts/MILA",
+    "WHIP-Robot-v00/scripts/esp32_gaits",
     "KIDA-Robot-v01/scripts/arduino/arduino00",
     "DREAM/dream_sensors",
     "Friday/dream_sensors",        # DREAM's repo, when it's checked out under its old name
