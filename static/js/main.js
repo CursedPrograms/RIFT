@@ -308,8 +308,7 @@ function lockFleet(action) {
             if (!d.robots) { lockOut.innerHTML = `<span class="bad">${esc(d.error || 'RIFT said no')}</span>`; return; }
             lockOut.innerHTML = d.robots.map(r => r.ok
                 ? `${esc(r.robot)}: <b>${action}ed</b> (${esc(r.how)}${r.said ? ', ' + esc(r.said) : ''})`
-                : `<span class="bad">${esc(r.robot)}: ${esc(r.said || 'no')}</span>`).join('
-');
+                : `<span class="bad">${esc(r.robot)}: ${esc(r.said || 'no')}</span>`).join('<br>');
             if (action === 'unlock') lockPin.value = '';
             refreshMission();
         }).catch(() => { lockOut.innerHTML = "<span class='bad'>RIFT didn't answer.</span>"; });
