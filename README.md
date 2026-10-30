@@ -1,11 +1,18 @@
 <p align="center"><img src="images/avatar_round.png" width="160" alt="RIFT"></p>
 
-[![Twitter: @NorowaretaGemu](https://img.shields.io/badge/X-@NorowaretaGemu-blue.svg?style=flat)](https://x.com/NorowaretaGemu)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<h1 align="center">RIFT</h1>
+<h3 align="center">Real-time Intelligent Fleet Technology</h3>
+<p align="center"><i>A DREAM Robotics System</i></p>
+
+<div align="center">
+
+[![Twitter: @NorowaretaGemu](https://img.shields.io/badge/X-@NorowaretaGemu-blue.svg?style=flat)](https://x.com/NorowaretaGemu) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+</div>
 
 <div align="center">
   <a href="https://ko-fi.com/cursedentertainment">
-    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="ko-fi" style="width: 20%;"/>
+    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="ko-fi" width="180"/>
   </a>
 </div>
 
@@ -18,17 +25,11 @@
   <img alt="Go" src="https://img.shields.io/badge/go-%23323330.svg?&style=for-the-badge&logo=go&logoColor=white"/>
   <img alt="Rust" src="https://img.shields.io/badge/rust-%23323330.svg?&style=for-the-badge&logo=rust&logoColor=white"/>
   <img alt="Julia" src="https://img.shields.io/badge/julia-%23323330.svg?&style=for-the-badge&logo=julia&logoColor=white"/>
-</div>
-
-<div align="center">
   <img alt="Arduino" src="https://img.shields.io/badge/-Arduino-323330?style=for-the-badge&logo=arduino&logoColor=white"/>
   <img alt="ESP32" src="https://img.shields.io/badge/ESP32-%23323330.svg?&style=for-the-badge&logo=espressif&logoColor=white"/>
   <img alt="Raspberry Pi" src="https://img.shields.io/badge/-Raspberry_Pi-323330?style=for-the-badge&logo=raspberry-pi&logoColor=white"/>
   <img alt="Android Studio" src="https://img.shields.io/badge/android%20studio-%23323330.svg?&style=for-the-badge&logo=android-studio&logoColor=white"/>
   <img alt="Unity" src="https://img.shields.io/badge/unity-%23323330.svg?&style=for-the-badge&logo=unity&logoColor=white"/>
-</div>
-
-<div align="center">
   <img alt="Git" src="https://img.shields.io/badge/git%20-%23323330.svg?&style=for-the-badge&logo=git&logoColor=white"/>
   <img alt="PowerShell" src="https://img.shields.io/badge/PowerShell-%23323330.svg?&style=for-the-badge&logo=powershell&logoColor=white"/>
   <img alt="Shell" src="https://img.shields.io/badge/Shell-%23323330.svg?&style=for-the-badge&logo=gnu-bash&logoColor=white"/>
@@ -37,18 +38,19 @@
 
 ---
 
-# RIFT
-## Real-time Intelligent Fleet Technology
-### A DREAM Robotics System
-
 <div align="center">
   <img src="images/rift_avatar.jpg" alt="RIFT avatar: a human representation of the robot" width="320"/>
   <p><i>RIFT</i></p>
 </div>
 
+---
+
 **Windows app:** [`builds/RIFT-Controller.exe`](builds/RIFT-Controller.exe) opens RIFT's page in a window and starts `run.bat` if it isn't running. Keep it in `builds/`. Source: `scripts/web_controller`.
 
-## Related Projects (DREAM Robotics Ecosystem)
+---
+
+## Related Projects
+
 
 <table>
   <tr>
@@ -72,7 +74,7 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 <details>
 <summary><b>View Overview</b></summary>
@@ -109,10 +111,85 @@ ARIA: :5014 (the drone: RIFT can ask her and open her page, nothing here flies h
 ARM: :5011
 ```
 
-## ▶️ Starting RIFT
+---
+
+## How to Run
+
+<details>
+<summary><b>View How to Run</b></summary>
+
+### Environment Setup/Install Dependencies
+
+```bash
+sudo snap install android-studio --classic
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+### Run app.py for the Flask fleet dashboard
+
+Runs the fleet registry, mDNS discovery (including browsing for DREAM),
+and the RIFT/NORA integration threads (fleet-authority heartbeat, internet
+share) all in one Python process — no compiling required.
+
+```bash
+python app.py
+```
+
+This is a full alternative to the native fleet server below: both speak the
+same `/robots` + `/register` protocol on port 5000, so run one or the other,
+not both, on a given machine.
+
+## ⚙️ Compile (native alternative)
+
+### 🐧 Linux (`PC App/App`)
+
+`network-discovery.cpp` is RIFT's native fleet-registry server: it publishes
+itself on the LAN via mDNS/Avahi (`_rift._tcp`), browses for other RIFT
+instances, and serves the `/robots` + `/register` endpoints that
+`registration.cpp`, `PC App/PyGame/registration.py`, and `Fleet/register.py`
+all talk to. `registration.cpp` is the subnet-scanning client that queries
+`/robots`.
+
+```bash
+./build.sh
+```
+
+This installs the required apt dev packages (`libcurl4-openssl-dev`,
+`libavahi-client-dev`, `nlohmann-json3-dev`, `libcpp-httplib-dev`) if
+missing — you'll be asked for your sudo password — then builds both
+binaries into `PC App/App/bin/`.
+
+To start the fleet server once built:
+
+```bash
+./run_server.sh
+```
+
+Or build manually with the Makefile:
+
+```bash
+cd "PC App/App"
+make
+```
+
+### 🪟 Windows (MinGW)
+```bash
+g++ registration.cpp -o registration.exe -lcurl
+```
+
+</details>
+
+---
+
+## ▶Starting RIFT
+
 `run.bat` starts the **Python hub** (`app.py`): it sets up `venv\` and installs `requirements.txt` the first time (again only when that file changes). That's the one with the conversations and the mission log. `run_server.bat` starts the native C++ hub instead (and the Go, Rust, Julia and F# hubs have their own `run_server_*.bat`); they share the same dashboard but only have the fleet registry, so the Conversations and Mission Log sections stay hidden there.
 
-## 🛜 The fleet network: RIFT is the hub
+---
+
+## The fleet network: RIFT is the hub
 
 RIFT's own WiFi network, **"RIFT"**, is where every robot lives. A router broadcasts it, and the machine running RIFT
 is its hub at **192.168.4.1**: it hands out the robots' addresses, shares its internet with them if it has any, and
@@ -188,7 +265,10 @@ Don't flash any robot without asking me.
 
 </details>
 
-## 💬 Conversations (in Brainfuck)
+---
+
+## Conversations (in Brainfuck)
+
 RIFT has the robots chat: every 25–60 s it picks two that can talk and has the first say a phrase and the second answer. Every phrase is a **Brainfuck program that prints its words** (hello is `++++++++[>+++++++++++++<-]>.+.` → `hi`), and a robot says it by beeping the program on its buzzer, one tone per symbol, in its own voice.
 
 - **Phrasebook:** `Fleet/brainfuck_talk.py` builds the shortest program it can for each phrase (0–6: hello, how are you, happy, curious, sleepy, let's play, bye) and reply (7–13), checks each with an interpreter, and writes the same `talk_bf.h` into every robot's sketch plus `Fleet/talk_bf.json`. Edit `PHRASES` and rerun it to change what they say.
@@ -200,7 +280,9 @@ RIFT has the robots chat: every 25–60 s it picks two that can talk and has the
 - **Real conversations:** robots with a mind (DREAM, KIDA-01, TINA register `peer`) play rock paper scissors, and the winner picks words or Brainfuck (`peer_talk.py`); RIFT relays the turns.
 - **Log:** `GET /talk` returns the shared conversation log and moods (NORA's IR chats with IDA are merged in); `POST /talk` starts one now. The dashboard's **Conversations** section shows who said what, the program and what it prints.
 
-## 🎵 Music together
+---
+
+## Music together
 
 RIFT conducts: `POST /music {"action": "play", "track": 100}` and every player starts the same song at the same moment. RIFT picks a start 4 s ahead on its own clock and sends each player `POST /music {"action", "track", "at"}`. Each player sets its clock by RIFT's (`GET /clock`), loads the song, and starts exactly then, so a slow network doesn't put them out of step. `pause`, `resume` and `stop` work the same way, and `GET /music` lists the players and the last command.
 
@@ -212,11 +294,16 @@ The dashboard's **Wheel locks** section locks every robot's wheels (WHIP's legs)
 - **Tracks** are numbered the same everywhere: the number in the file name, as on NORA's SD card (`NORA-Robot-v00/music`: `Track000.mp3`, `Track100.mp3`, ...).
 - Code: `Fleet/music.py`.
 
-## 📜 Mission log and the fleet page
+---
+
+## Mission log and the fleet page
+
 - **Fleet:** the dashboard lists every robot online - RIFT's own registry, NORA's (where most robots register) and NORA herself - each with an **Open** button for its own web page. The address comes from a `web:<port>` capability if the robot registers one, else its usual port (NORA 5002, KIDA00 5003, KIDA01 5004, WHIP 5005, DREAM 5009 over HTTPS, MILA 5010, ARM 5011). `GET /fleet` returns the same list as JSON.
 - **Mission log:** RIFT keeps the fleet's diary (`Fleet/mission.py`): who came online or went quiet, who said what to whom, whose mood changed, counted in mission days from the first entry. It's saved to `mission_log.json`, so the mission carries on across restarts. `GET /mission` returns it; a robot can write its own entry with `POST /mission {"who": "DREAM", "text": "..."}`.
 
-## 📡 RIFT's own board (IR + buzzer)
+---
+
+## RIFT's own board (IR + buzzer)
 
 An Arduino UNO on the hub PC ([`arduino/rift_link`](arduino/rift_link/rift_link.ino)) gives RIFT what NORA has: an IR transmitter to drive and greet IDA, MILA, WHIP and KIDA-01 over the fleet IR link, an IR receiver that reports every frame it hears (NORA's "I am here" beacon, the robots' phrases, any remote), and a buzzer that speaks the Brainfuck phrases in the hub's own low voice.
 
@@ -233,75 +320,9 @@ RIFT finds the board by the fleet handshake (`WHO` → `I am Rift`), 25 s after 
 - `GET /board/say?r=mila&p=0`: beep a phrase (0-6), then send it to that robot over IR
 - `GET /board/talk?u=7`: beep a Brainfuck utterance (0-13)
 
-## How to Run:
+---
 
-<details>
-<summary><b>View How to Run</b></summary>
-
-### Environment Setup/Install Dependencies
-
-```bash
-sudo snap install android-studio --classic
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-### Run app.py for the Flask fleet dashboard
-
-Runs the fleet registry, mDNS discovery (including browsing for DREAM),
-and the RIFT/NORA integration threads (fleet-authority heartbeat, internet
-share) all in one Python process — no compiling required.
-
-```bash
-python app.py
-```
-
-This is a full alternative to the native fleet server below: both speak the
-same `/robots` + `/register` protocol on port 5000, so run one or the other,
-not both, on a given machine.
-
-## ⚙️ Compile (native alternative)
-
-### 🐧 Linux (`PC App/App`)
-
-`network-discovery.cpp` is RIFT's native fleet-registry server: it publishes
-itself on the LAN via mDNS/Avahi (`_rift._tcp`), browses for other RIFT
-instances, and serves the `/robots` + `/register` endpoints that
-`registration.cpp`, `PC App/PyGame/registration.py`, and `Fleet/register.py`
-all talk to. `registration.cpp` is the subnet-scanning client that queries
-`/robots`.
-
-```bash
-./build.sh
-```
-
-This installs the required apt dev packages (`libcurl4-openssl-dev`,
-`libavahi-client-dev`, `nlohmann-json3-dev`, `libcpp-httplib-dev`) if
-missing — you'll be asked for your sudo password — then builds both
-binaries into `PC App/App/bin/`.
-
-To start the fleet server once built:
-
-```bash
-./run_server.sh
-```
-
-Or build manually with the Makefile:
-
-```bash
-cd "PC App/App"
-make
-```
-
-### 🪟 Windows (MinGW)
-```bash
-g++ registration.cpp -o registration.exe -lcurl
-```
-
-</details>
-
-## 🧩 Fleet hub in other languages (Windows + Linux)
+## Fleet hub in other languages (Windows + Linux)
 
 `app.py` is the reference fleet hub. `PC App/Go`, `PC App/Rust`, `PC App/FSharp` (.NET 8) and `PC App/Julia` are complete, cross-platform re-implementations of it - the same protocol on the same port `5000`, so run **one** hub per machine, whichever language you prefer. Each one has:
 
@@ -350,7 +371,9 @@ The same protocol (`/ping`, `/register`, `/robots`, `/peers`, `/mode`, dashboard
 
 Verified: the C++, Unity (C# on a desktop runtime with Unity stubs) and Android (core on a JVM) hubs pass the same 32-check protocol suite and interoperate over mDNS/heartbeat with the Go/Rust/F#/Julia hubs. Not run on real hardware: Linux-only code paths, Bluetooth, internet sharing, and the Android app on a phone (it builds against API 34 and its hub core passes `gradlew test`, but hasn't been installed on a device yet).
 
-## 📡 Who's nearby (ESP-NOW + Bluetooth LE)
+---
+
+## Who's nearby (ESP-NOW + Bluetooth LE)
 
 Every robot sends a small **"I'm here"** beacon twice a second and listens for the others'. From the **signal strength** it knows roughly how close each one is, and from how that changes over time whether it's **coming closer, steady or leaving**:
 
@@ -391,21 +414,17 @@ RIFT gathers every robot's `/near` into one picture at `GET /near` and the dashb
 
 ---
 
-<br>
+<div align="center">&copy; Cursed Entertainment 2026</div>
+
 <div align="center">
-© Cursed Entertainment 2026
+  <a href="https://cursed-entertainment.itch.io/">
+    <img src="https://github.com/CursedPrograms/cursedentertainment/raw/main/images/logos/logo-wide-grey.png" alt="Cursed Entertainment" width="250"/>
+  </a>
 </div>
-<br>
+
 <div align="center">
-<a href="https://cursed-entertainment.itch.io/" target="_blank">
-    <img src="https://github.com/CursedPrograms/cursedentertainment/raw/main/images/logos/logo-wide-grey.png"
-        alt="CursedEntertainment Logo" style="width:250px;">
-</a>
-</div>
-<br>
-<div align="center">
-  <a href="https://github.com/SynthWomb" target="_blank">
-    <img src="https://github.com/SynthWomb/synth.womb/blob/main/logos/synthwomb07.png" alt="SynthWomb" style="width:200px;"/>
+  <a href="https://github.com/SynthWomb">
+    <img src="https://github.com/SynthWomb/synth.womb/blob/main/logos/synthwomb07.png?raw=true" alt="SynthWomb" width="200"/>
   </a>
 </div>
 
