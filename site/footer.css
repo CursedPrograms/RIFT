@@ -1,0 +1,10 @@
+/* The footer every fleet site shares. Colours come from each site's own variables. */
+footer.fleet-footer {
+  border-top: 1px solid var(--border); padding: 48px 20px 56px; text-align: center;
+  color: var(--sub, var(--text-dim)); font: 13px var(--mono, monospace);
+}
+footer.fleet-footer .links { display: flex; flex-wrap: wrap; gap: 8px 22px; justify-content: center; margin-bottom: 26px; }
+footer.fleet-footer .links a { color: var(--sub, var(--text-dim)); }
+footer.fleet-footer .links a:hover { color: var(--accent); }
+footer.fleet-footer .logos { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 26px; margin-bottom: 22px; }
+footer.fleet-footer .logos img { display: block; height: auto; max-width: 100%; }
