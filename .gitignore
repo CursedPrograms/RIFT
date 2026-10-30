@@ -57,3 +57,7 @@ mission_log.json
 mission_log.json.tmp
 Unity App/RIFT/Assets/StreamingAssets/
 Unity App/RIFT/Assets/StreamingAssets.meta
+
+# Controllers, built and kept
+!builds/
+!builds/*.exe
