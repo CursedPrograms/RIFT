@@ -74,6 +74,7 @@ func (s *Server) Handler() http.Handler {
 		writeJSON(w, http.StatusOK, map[string]any{"mode": mode, "bt_port": nilIfEmpty(btPort)})
 	})
 	mux.HandleFunc("POST /mode", s.handleSetMode)
+	s.fleetRoutes(mux)
 
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		data, err := os.ReadFile(filepath.Join(s.cfg.Root, "templates", "index.html"))
