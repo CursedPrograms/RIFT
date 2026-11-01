@@ -38,7 +38,9 @@ NEVER = re.compile(r"unlock|password|pin\b|motor_?lock_?off|shutdown|reboot|flas
 # A route is "/path" (GET) or ("/path", {json}) (POST). An action is a route,
 # {"go": route, "then": route} for a timed move (go, wait "seconds", then; with "every": s the
 # go is resent that often, for robots whose drives stop by themselves without it), or
-# {"route": route, "skip_if": (key, value)} to skip it when the status already says so.
+# {"route": route, "skip_if": (key, value)} to skip it when the status already says so, or a
+# list of routes, called in order (the first that worked answers).
+# "stop" means stop in any mode: a plain /stop does nothing while a robot drives itself.
 ADAPTERS = {
     "NORA": {
         "status": "/sensors",
@@ -47,10 +49,11 @@ ADAPTERS = {
             "music_play": {"route": "/muPlay", "skip_if": ("ms", 1)},
             "music_next": "/muNext", "music_prev": "/muPrev", "music_stop": "/muStop",
             "uv_on": "/uvOn", "uv_off": "/uvOff", "uv_blink": "/uvBlink",
-            "stop": "/stop", "lock_wheels": "/motorlockOn",
-            "forward": {"go": "/fw", "then": "/stop"}, "back": {"go": "/bw", "then": "/stop"},
-            "left": {"go": "/left", "then": "/stop"}, "right": {"go": "/right", "then": "/stop"},
-            "turn_left": {"go": "/turnL", "then": "/stop"}, "turn_right": {"go": "/turnR", "then": "/stop"},
+            "stop": "/modeManual", "lock_wheels": "/motorlockOn",   # /stop only works in manual; this stops her too
+            # resent: she lets go 1.5 s after the last one (WEB_DRIVE_TIMEOUT_MS)
+            "forward": {"go": "/fw", "then": "/stop", "every": 1.0}, "back": {"go": "/bw", "then": "/stop", "every": 1.0},
+            "left": {"go": "/left", "then": "/stop", "every": 1.0}, "right": {"go": "/right", "then": "/stop", "every": 1.0},
+            "turn_left": {"go": "/turnL", "then": "/stop", "every": 1.0}, "turn_right": {"go": "/turnR", "then": "/stop", "every": 1.0},
         },
         "note": "drives only in manual mode, and not while her wheels are locked",
     },
@@ -58,7 +61,7 @@ ADAPTERS = {
     # (with her wheel lock), and RIFT uses that instead. /command is on every version of her.
     "KIDA00": {
         "does": {
-            "stop": ("/command", {"command": "stop"}),
+            "stop": [("/do", {"action": "stop"}), ("/command", {"command": "stop"})],   # /do also ends AUTONOMOUS / LINE
             "music_play": ("/command", {"command": "music"}), "music_stop": ("/command", {"command": "stop_music"}),
             "music_next": ("/command", {"command": "skip"}), "photo": ("/command", {"command": "photo"}),
             "forward": {"go": ("/command", {"command": "forward"}), "then": ("/command", {"command": "stop"})},
@@ -73,7 +76,7 @@ ADAPTERS = {
     # 0.3 s. Unlocking her motors is never relayed (motor_lock_off is in NEVER).
     "KIDA01": {
         "does": {
-            "stop": ("/action", {"command": "move_stop"}),
+            "stop": [("/action", {"command": "stop_anywhere"}), ("/action", {"command": "move_stop"})],   # first: out of any mode
             "lock_wheels": ("/action", {"command": "motor_lock_on"}),
             "music_play": {"route": ("/action", {"command": "music_play"}), "skip_if": ("music_on", True)},
             "music_next": ("/action", {"command": "music_skip"}),
@@ -289,6 +292,9 @@ def do(fleet, name, action, args=None, asker="someone", confirmed=False):
 
 
 def _call(base, route):
+    if isinstance(route, list):
+        answers = [_call(base, r) for r in route]
+        return next((a for a in answers if a[0] < 400), answers[0])
     if isinstance(route, str) and route.startswith("ir:"):     # IDA: NORA's /ida, or RIFT's board
         if base:
             return _http("GET", base + "/ida?c=" + route[3:])

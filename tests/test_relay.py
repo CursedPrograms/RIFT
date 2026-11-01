@@ -130,10 +130,15 @@ def test_moving_needs_confirmed(fleet, slept):
     assert code == 200 and fleet.paths("nora") == ["/fw", "/stop"] and slept == [1.0]
 
 
+def test_a_long_drive_keeps_noras_timer_fed(fleet, slept):
+    relay.do([fleet.robot("nora")], "NORA", "forward", {"seconds": 3}, confirmed=True)
+    assert fleet.paths("nora") == ["/fw", "/fw", "/fw", "/stop"] and max(slept) < 1.5
+
+
 def test_drive_capped(fleet, slept):
     relay.do([fleet.robot("nora")], "NORA", "turn_left", {"seconds": 99}, confirmed=True)
     relay.do([fleet.robot("nora")], "NORA", "back", {"seconds": "soon"}, confirmed=True)
-    assert slept == [relay.MAX_DRIVE_S, 0.5]
+    assert sum(slept[:-1]) == relay.MAX_DRIVE_S and slept[-1] == 0.5
 
 
 def test_never_relayed(fleet):
@@ -150,6 +155,24 @@ def test_unknown_action_and_missing_robot(fleet):
     code, out = relay.do([], "KIDA01", "photo")
     assert code == 404 and "isn't online" in out["error"]
     assert relay.do([fleet.robot("nora")], "NORA", "")[0] == 400
+
+
+def test_stop_works_in_any_mode(fleet):
+    # NORA's /stop does nothing outside manual; /modeManual stops her in all of them
+    relay.do([fleet.robot("nora")], "NORA", "stop")
+    assert fleet.paths("nora") == ["/modeManual"]
+    fleet.hits.clear()
+    code, _ = relay.do([fleet.robot("kida00")], "KIDA00", "stop")
+    assert code == 200 and fleet.paths("kida00") == ["/do", "/command"]
+    fleet.hits.clear()
+    relay.do([fleet.robot("kida01")], "KIDA01", "stop")
+    assert [h[3] for h in fleet.hits] == [{"command": "stop_anywhere"}, {"command": "move_stop"}]
+
+
+def test_a_list_of_routes_answers_with_the_first_that_worked(monkeypatch):
+    answers = iter([(404, "no /do on this version"), (200, {"received": "stop"})])
+    monkeypatch.setattr(relay, "_http", lambda *a: next(answers))
+    assert relay._call("http://x", [("/do", {}), ("/command", {})]) == (200, {"received": "stop"})
 
 
 def test_kida00_mapping(fleet, slept):
