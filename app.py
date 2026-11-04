@@ -349,6 +349,67 @@ def index():
     return render_template("index.html", this_name=THIS_NAME, my_ip=MY_IP, this_port=THIS_PORT)
 
 
+# ── DREAM on a call (static/js/dream_call.js) ───────────────────────────────
+# When DREAM runs on another PC, RIFT's dashboard can show her live, in step with her own screen
+# (her mirror on :5015: the clip she's on and how far in, her voice as she speaks), and you talk back:
+# a video call. On the same PC her own window is the call, so the dashboard hides it.
+# GET /dream/info    where she is, whether she's on this PC, her mirror and dashboard
+# POST /dream/call   your words (audio or {"text"}) to her /api/dream/call: she answers on her own screen
+
+DREAM_PORT, DREAM_LOCAL_PORT, DREAM_MIRROR_PORT = 5009, 5010, 5015
+
+
+def _this_pc(ip):
+    if not ip or ip.startswith("127.") or ip in ("localhost", "::1", MY_IP):
+        return True
+    try:
+        return ip in socket.gethostbyname_ex(socket.gethostname())[2]
+    except OSError:
+        return False
+
+
+def _dream_ip():
+    for r in _whole_fleet():
+        if r.get("name") == "DREAM" and r.get("ip"):
+            return r["ip"]
+    return None
+
+
+@app.route("/dream/info")
+def dream_info():
+    ip = _dream_ip()
+    if not ip:
+        return jsonify({"found": False})
+    same = _this_pc(ip)
+    return jsonify({
+        "found": True, "same_pc": same, "ip": ip,
+        "mirror": f"http://{ip}:{DREAM_MIRROR_PORT}",
+        # on this PC her plain-HTTP local port (no certificate warning); elsewhere her HTTPS dashboard
+        "dashboard": f"http://localhost:{DREAM_LOCAL_PORT}/" if same else f"https://{ip}:{DREAM_PORT}/",
+    })
+
+
+@app.route("/dream/call", methods=["POST"])
+def dream_call():
+    import requests
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)   # her certificate is her own
+    ip = _dream_ip()
+    if not ip:
+        return jsonify({"error": "DREAM isn't on the fleet"}), 404
+    f = request.files.get("audio")
+    kw = {"files": {"audio": (f.filename or "call.webm", f.read(), f.mimetype or "audio/webm")}} if f else \
+         {"json": request.get_json(silent=True) or {}}
+    last = None
+    for scheme in ("https", "http"):
+        try:
+            r = requests.post(f"{scheme}://{ip}:{DREAM_PORT}/api/dream/call", timeout=180, verify=False, **kw)
+            return r.content, r.status_code, {"Content-Type": r.headers.get("Content-Type", "application/json")}
+        except requests.RequestException as e:
+            last = e
+    return jsonify({"error": f"can't reach DREAM: {last}"}), 502
+
+
 @app.route("/cameras")
 def cameras():
     # A live wall of every robot's camera feed, driven by the fleet roster.

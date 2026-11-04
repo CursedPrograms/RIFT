@@ -1,33 +1,29 @@
 """
-Bluetooth-serial link to NORA, used by register.py's heartbeat loop when
-RIFT's dashboard "Connection Mode" is switched to Bluetooth instead of the
-default HTTP-over-WiFi path.
+Bluetooth link to NORA, used by register.py's heartbeat loop when RIFT's dashboard "Connection Mode" is
+switched to Bluetooth instead of the default HTTP-over-WiFi path.
 
-Speaks the fleet-registration half of NORA's Bluetooth protocol
-(NORA-Robot-v00's scripts/esp32/esp32.ino, handleBluetooth() 'H' command)
-rather than her drive commands: send "H<name>:<cap1,cap2>\n", she replies
-"OK\n" or "ERR\n". Requires the PC be paired with "NORA" and have a serial
-port bound to that pairing (Linux: sudo rfcomm bind 0 <NORA_MAC>; Windows:
-the paired device's outgoing COM port).
+It speaks the fleet's one Bluetooth protocol (fleet_bt.py, the same for every robot, NORA included):
+RIFT registers in NORA's fleet list exactly as over WiFi, POST /register on her port 5000, carried over
+her Bluetooth serial as ">POST :5000/register<TAB>name=RIFT&type=...". Requires the PC be paired with
+"NORA"; `port` is the COM port that pairing made (Windows), /dev/rfcommN (Linux), or her address.
 """
 
-DEFAULT_BAUD = 115200
+from urllib.parse import urlencode
+
+from Fleet import fleet_bt
+
+NORA_WEB_PORT, NORA_FLEET_PORT = 5002, 5000
 
 
 class BtFleetLink:
-    def __init__(self, port, baud=DEFAULT_BAUD, timeout=2):
-        import serial   # only needed for Bluetooth; pip install pyserial
-        self.ser = serial.Serial(port, baud, timeout=timeout)
+    def __init__(self, port, timeout=2):
+        self.session = fleet_bt.BtSession(port, timeout=timeout, home_port=NORA_WEB_PORT)
 
-    def register(self, name, capabilities):
-        line = f"H{name}:{','.join(capabilities)}\n"
-        self.ser.reset_input_buffer()
-        self.ser.write(line.encode())
-        reply = self.ser.readline().decode(errors="ignore").strip()
-        return reply == "OK"
+    def register(self, name, capabilities, fleet_type="fleet_manager"):
+        r = self.session.post(f"http://nora:{NORA_FLEET_PORT}/register",
+                              data=urlencode({"name": name, "type": fleet_type,
+                                              "capabilities": ",".join(capabilities)}))
+        return r.status_code == 200
 
     def close(self):
-        try:
-            self.ser.close()
-        except Exception:
-            pass
+        self.session.close()

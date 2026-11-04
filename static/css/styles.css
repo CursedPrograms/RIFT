@@ -115,3 +115,30 @@ h3 {
 .relay-out { margin-top: 8px; font-size: 0.78rem; color: var(--text-sec); white-space: pre-wrap; word-break: break-word; }
 .relay-out .bad { color: var(--text-dim); }
 .relay-out b { color: var(--accent); font-weight: normal; }
+
+
+/* ── DREAM on a call (dream_call.js) ─────────────────────────────────────── */
+#dreamLinks { display: flex; gap: 10px; align-items: center; }
+#dreamLinks[hidden] { display: none; }
+#dreamDash { color: var(--accent); text-decoration: none; border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; }
+#dreamCall {
+    position: fixed; right: 20px; bottom: 20px; width: min(480px, calc(100vw - 40px)); z-index: 50;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+#dreamCall[hidden] { display: none; }
+#dreamCall .dc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; cursor: move; user-select: none; }
+#dreamCall .dc-name { font-weight: 700; color: var(--accent); }
+#dreamCall .dc-state { color: var(--text-sec); font-size: 0.85em; flex: 1; }
+#dreamCall #dcClose { padding: 2px 10px; }
+#dreamCall video { width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 8px; display: block; }
+#dreamCall .dc-caption { min-height: 1.4em; margin: 8px 2px; color: var(--text); font-size: 0.9em; }
+#dreamCall .dc-talk { display: flex; gap: 6px; }
+#dreamCall .dc-talk input { flex: 1; background: var(--background); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; }
+#dreamCall #dcMic.rec { background: var(--accent); color: var(--background); }
+#dreamCall .dc-chat { max-height: 200px; overflow-y: auto; margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+#dreamCall .dc-chat:empty { display: none; }
+#dreamCall .dc-line { max-width: 85%; padding: 5px 10px; border-radius: 10px; font-size: 0.9em; line-height: 1.35; }
+#dreamCall .dc-line.user { align-self: flex-end; background: var(--button-hover-bg); border: 1px solid var(--border); }
+#dreamCall .dc-line.assistant { align-self: flex-start; background: var(--background); border: 1px solid var(--accent); }
+#dreamCall .dc-caption { color: var(--text-sec); font-size: 0.8em; }

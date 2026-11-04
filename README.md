@@ -267,6 +267,10 @@ Don't flash any robot without asking me.
 
 ---
 
+## DREAM on a call
+
+When DREAM runs on another PC, the dashboard (and so `RIFT-Controller.exe`) has a **DREAM** button: a window, on and off, with her live, like a video call. It plays the clip her own screen is playing, at the same moment, and her voice as she speaks: her mirror on :5015 says which clip she's on and how far in, and serves the clips and her lines. You talk back with **Hold to talk** or the box: RIFT passes it to her (`POST /dream/call` -> her `/api/dream/call`), she answers on her own screen as she would to her own mic, and you see and hear it here. It's a chat too, like her dashboard's: the conversation shows as it happens (yours, anyone's at her own PC, and everything she says, from her mirror's `/transcript`), so you can use her as a chatbot, and her states (listening, thinking, talking) play along on both screens. Asleep, a call is a call: it may take a few, and she mumbles. Drag the window by its title. On the same PC her own window is the call, so the button stays hidden. **DREAM's dashboard** links to her full dashboard either way (`GET /dream/info` says where she is). The mic needs the page on a secure origin (localhost, as on RIFT's PC, or https); elsewhere the box still works.
+
 ## Conversations (in Brainfuck)
 
 RIFT has the robots chat: every 25–60 s it picks two that can talk and has the first say a phrase and the second answer. Every phrase is a **Brainfuck program that prints its words** (hello is `++++++++[>+++++++++++++<-]>.+.` → `hi`), and a robot says it by beeping the program on its buzzer, one tone per symbol, in its own voice.
@@ -429,6 +433,13 @@ RIFT gathers every robot's `/near` into one picture at `GET /near` and the dashb
 </div>
 
 ---
+
+## Bluetooth: one protocol for the fleet
+
+The fleet has **one Bluetooth protocol** (`fleet_bt`, master copy in [RIFT](https://github.com/CursedPrograms/RIFT)'s `Fleet/`): a controller sends exactly the web request it would send over WiFi, one per line (`>GET /status`, `>POST /command<TAB>{...}`), and the robot asks its own web server and answers `<code> <length>` and the body. So every command works the same both ways, including new ones, and so does every rule: the PIN, the locks, the robot's own stops.
+
+- `Fleet/fleet_bt.py`: controllers' `BtSession` (a drop-in for `requests.Session`: a COM port, `/dev/rfcommN` or an address), the Pi robots' RFCOMM server, and `ble:` targets; `Fleet/esp32/fleet_bt.h` (Classic, ESP32) and `fleet_bt_ble.h` (BLE: ARIA). Robots copy them byte for byte. `tests/test_fleet_bt.py` tests it.
+- RIFT's Bluetooth heartbeat to NORA (Connection Mode) registers in her fleet list with it (`POST :5000/register`).
 
 <!-- DREAM-ECOSYSTEM:START -->
 ## The DREAM Robotics ecosystem

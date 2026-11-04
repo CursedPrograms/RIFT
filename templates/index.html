@@ -14,6 +14,26 @@
     <h2>Real-time Intelligent Fleet Technology</h2>
     <p id="self">{{ this_name }} &middot; {{ my_ip }}:{{ this_port }}</p>
     <p style="margin-top:6px"><a href="/cameras" style="color:var(--accent);text-decoration:none;border:1px solid var(--border);border-radius:8px;padding:7px 14px">&#128247; Fleet Cameras</a></p>
+    <p id="dreamLinks" hidden>
+        <button id="dreamToggle" hidden>&#128250; DREAM</button>
+        <a id="dreamDash" href="#" target="_blank" rel="noopener">DREAM's dashboard</a>
+    </p>
+
+    <div id="dreamCall" hidden>
+        <div class="dc-head">
+            <span class="dc-name">DREAM</span>
+            <span id="dcState" class="dc-state">connecting...</span>
+            <button id="dcClose" title="Close">&times;</button>
+        </div>
+        <video id="dcVideo" muted playsinline></video>
+        <div id="dcChat" class="dc-chat"></div>
+        <p id="dcCaption" class="dc-caption"></p>
+        <div class="dc-talk">
+            <button id="dcMic" title="Hold to talk">&#127908; Hold to talk</button>
+            <input id="dcText" placeholder="Talk to DREAM">
+            <button id="dcSend">Send</button>
+        </div>
+    </div>
 
     <section id="connMode">
         <h3>Connection Mode</h3>
@@ -98,5 +118,6 @@
     </section>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dream_call.js') }}"></script>
 </body>
 </html>
