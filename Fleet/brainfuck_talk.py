@@ -52,6 +52,7 @@ SKETCHES = [
     "Friday/dream_sensors",        # DREAM's repo, when it's checked out under its old name
     "ARM-Robot-v01/scripts/arm",
     "RIFT/arduino/rift_link",
+    "RITA/scripts/esp32",           # RITA joins the conversations on her speaker
 ]
 
 # One tone per symbol (Hz before the robot's voice scaling) and its length

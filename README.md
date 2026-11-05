@@ -51,7 +51,6 @@
 
 ## Related Projects
 
-
 <table>
   <tr>
     <td align="center"><a href="https://github.com/CursedPrograms/ARIA-Robot-v00"><img src="https://raw.githubusercontent.com/CursedPrograms/ARIA-Robot-v00/main/images/avatar_round.png" width="72" alt="ARIA"><br>ARIA</a></td>
@@ -75,6 +74,8 @@
 ---
 
 ## Overview
+
+**Website: <https://cursedprograms.github.io/RIFT/>**
 
 <details>
 <summary><b>View Overview</b></summary>
@@ -113,7 +114,7 @@ ARM: :5011
 
 ---
 
-## How to Run
+## Quick start
 
 <details>
 <summary><b>View How to Run</b></summary>
@@ -141,7 +142,9 @@ This is a full alternative to the native fleet server below: both speak the
 same `/robots` + `/register` protocol on port 5000, so run one or the other,
 not both, on a given machine.
 
-## ⚙️ Compile (native alternative)
+---
+
+## Compile (native alternative)
 
 ### 🐧 Linux (`PC App/App`)
 
@@ -183,7 +186,7 @@ g++ registration.cpp -o registration.exe -lcurl
 
 ---
 
-## ▶Starting RIFT
+## Starting RIFT
 
 `run.bat` starts the **Python hub** (`app.py`): it sets up `venv\` and installs `requirements.txt` the first time (again only when that file changes). That's the one with the conversations and the mission log. `run_server.bat` starts the native C++ hub instead (and the Go, Rust, Julia and F# hubs have their own `run_server_*.bat`); they share the same dashboard but only have the fleet registry, so the Conversations and Mission Log sections stay hidden there.
 
@@ -271,6 +274,8 @@ Don't flash any robot without asking me.
 
 When DREAM runs on another PC, the dashboard (and so `RIFT-Controller.exe`) has a **DREAM** button: a window, on and off, with her live, like a video call. It plays the clip her own screen is playing, at the same moment, and her voice as she speaks: her mirror on :5015 says which clip she's on and how far in, and serves the clips and her lines. You talk back with **Hold to talk** or the box: RIFT passes it to her (`POST /dream/call` -> her `/api/dream/call`), she answers on her own screen as she would to her own mic, and you see and hear it here. It's a chat too, like her dashboard's: the conversation shows as it happens (yours, anyone's at her own PC, and everything she says, from her mirror's `/transcript`), so you can use her as a chatbot, and her states (listening, thinking, talking) play along on both screens. Asleep, a call is a call: it may take a few, and she mumbles. Drag the window by its title. On the same PC her own window is the call, so the button stays hidden. **DREAM's dashboard** links to her full dashboard either way (`GET /dream/info` says where she is). The mic needs the page on a secure origin (localhost, as on RIFT's PC, or https); elsewhere the box still works.
 
+---
+
 ## Conversations (in Brainfuck)
 
 RIFT has the robots chat: every 25–60 s it picks two that can talk and has the first say a phrase and the second answer. Every phrase is a **Brainfuck program that prints its words** (hello is `++++++++[>+++++++++++++<-]>.+.` → `hi`), and a robot says it by beeping the program on its buzzer, one tone per symbol, in its own voice.
@@ -302,8 +307,9 @@ The dashboard's **Wheel locks** section locks every robot's wheels (WHIP's legs)
 
 ## Mission log and the fleet page
 
-- **Fleet:** the dashboard lists every robot online - RIFT's own registry, NORA's (where most robots register) and NORA herself - each with an **Open** button for its own web page. The address comes from a `web:<port>` capability if the robot registers one, else its usual port (NORA 5002, KIDA00 5003, KIDA01 5004, WHIP 5005, DREAM 5009 over HTTPS, MILA 5010, ARM 5011). `GET /fleet` returns the same list as JSON.
+- **Fleet:** the dashboard lists every robot online - RIFT's own registry, NORA's (where most robots register) and NORA herself - each with an **Open** button for his or her own web page. The address comes from a `web:<port>` capability if the robot registers one, else their usual port (NORA 5002, KIDA00 5003, KIDA01 5004, WHIP 5005, DREAM 5009 over HTTPS, MILA 5010, ARM 5011). `GET /fleet` returns the same list as JSON.
 - **Mission log:** RIFT keeps the fleet's diary (`Fleet/mission.py`): who came online or went quiet, who said what to whom, whose mood changed, counted in mission days from the first entry. It's saved to `mission_log.json`, so the mission carries on across restarts. `GET /mission` returns it; a robot can write its own entry with `POST /mission {"who": "DREAM", "text": "..."}`.
+- **The fleet's memory:** the mission log also goes to the Hindsight server DREAM hosts (`Fleet/fleet_memory.py`, bank `rift`), as one digest every half hour (the Brainfuck chatter stays out), so DREAM and TINA can remember the fleet's days. `GET /memory` says where it is; `GET /memory/recall?q=...&bank=rift|nina|tina|dream` asks it. It finds DREAM by her `memory:8888` registration; `RIFT_MEMORY=0` turns it off, `RIFT_MEMORY_URL` sets the address. `Fleet/fleet_memory.py` is the master copy NINA and TINA carry too ([how it works](https://github.com/CursedPrograms/DREAM#the-fleets-memory-hindsight)).
 
 ---
 
@@ -377,6 +383,17 @@ Verified: the C++, Unity (C# on a desktop runtime with Unity stubs) and Android 
 
 ---
 
+## Bluetooth: one protocol for the fleet
+
+The fleet has **one Bluetooth protocol** (`fleet_bt`, master copy in [RIFT](https://github.com/CursedPrograms/RIFT)'s `Fleet/`): a controller sends exactly the web request it would send over WiFi, one per line (`>GET /status`, `>POST /command<TAB>{...}`), and the robot asks his or her own web server and answers `<code> <length>` and the body. So every command works the same both ways, including new ones, and so does every rule: the PIN, the locks, the robot's own stops.
+
+- `Fleet/fleet_bt.py`: controllers' `BtSession` (a drop-in for `requests.Session`: a COM port, `/dev/rfcommN` or an address), the Pi robots' RFCOMM server, and `ble:` targets; `Fleet/esp32/fleet_bt.h` (Classic, ESP32) and `fleet_bt_ble.h` (BLE: ARIA). Robots copy them byte for byte. `tests/test_fleet_bt.py` tests it.
+- RIFT's Bluetooth heartbeat to NORA (Connection Mode) registers in her fleet list with it (`POST :5000/register`).
+
+<!-- DREAM-ECOSYSTEM:START -->
+
+---
+
 ## Who's nearby (ESP-NOW + Bluetooth LE)
 
 Every robot sends a small **"I'm here"** beacon twice a second and listens for the others'. From the **signal strength** it knows roughly how close each one is, and from how that changes over time whether it's **coming closer, steady or leaving**:
@@ -418,14 +435,6 @@ RIFT gathers every robot's `/near` into one picture at `GET /near` and the dashb
 
 ---
 
-<div align="center">&copy; Cursed Entertainment 2026</div>
-
-<div align="center">
-  <a href="https://cursed-entertainment.itch.io/">
-    <img src="https://github.com/CursedPrograms/cursedentertainment/raw/main/images/logos/logo-wide-grey.png" alt="Cursed Entertainment" width="250"/>
-  </a>
-</div>
-
 <div align="center">
   <a href="https://github.com/SynthWomb">
     <img src="https://github.com/SynthWomb/synth.womb/blob/main/logos/synthwomb07.png?raw=true" alt="SynthWomb" width="200"/>
@@ -434,14 +443,16 @@ RIFT gathers every robot's `/near` into one picture at `GET /near` and the dashb
 
 ---
 
-## Bluetooth: one protocol for the fleet
+<div align="center">&copy; Cursed Entertainment 2026</div>
 
-The fleet has **one Bluetooth protocol** (`fleet_bt`, master copy in [RIFT](https://github.com/CursedPrograms/RIFT)'s `Fleet/`): a controller sends exactly the web request it would send over WiFi, one per line (`>GET /status`, `>POST /command<TAB>{...}`), and the robot asks its own web server and answers `<code> <length>` and the body. So every command works the same both ways, including new ones, and so does every rule: the PIN, the locks, the robot's own stops.
+<div align="center">
+  <a href="https://cursed-entertainment.itch.io/">
+    <img src="https://github.com/CursedPrograms/cursedentertainment/raw/main/images/logos/logo-wide-grey.png" alt="Cursed Entertainment" width="250"/>
+  </a>
+</div>
 
-- `Fleet/fleet_bt.py`: controllers' `BtSession` (a drop-in for `requests.Session`: a COM port, `/dev/rfcommN` or an address), the Pi robots' RFCOMM server, and `ble:` targets; `Fleet/esp32/fleet_bt.h` (Classic, ESP32) and `fleet_bt_ble.h` (BLE: ARIA). Robots copy them byte for byte. `tests/test_fleet_bt.py` tests it.
-- RIFT's Bluetooth heartbeat to NORA (Connection Mode) registers in her fleet list with it (`POST :5000/register`).
+---
 
-<!-- DREAM-ECOSYSTEM:START -->
 ## The DREAM Robotics ecosystem
 
 **Minds** — [DREAM](https://github.com/CursedPrograms/DREAM) companion · [TINA](https://github.com/CursedPrograms/TINA) engineer · [NINA](https://github.com/CursedPrograms/NINA) caretaker · [RIFT](https://github.com/CursedPrograms/RIFT) fleet hub · [LYCEA](https://github.com/CursedPrograms/LYCEA) training school  

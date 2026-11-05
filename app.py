@@ -22,6 +22,7 @@ from Fleet.rift_board import RiftBoard
 from Fleet.bt_autopair import start_autopair
 from Fleet import near_map
 from Fleet.fleet_near import FleetNear
+from Fleet.fleet_memory import FleetMemory, Digest
 
 # RIFT on Bluetooth LE: on a Pi it beacons as "RIFT" (a hub is always parked) and
 # hears the robots; on a PC it only listens. near_map adds every robot's own view.
@@ -327,6 +328,35 @@ def mission_note():
         return jsonify({"error": "need who and text"}), 400
     mission.add(who[:24], text[:280], "note")
     return jsonify({"ok": True})
+
+
+# ── The fleet's memory (Hindsight, hosted by DREAM: Fleet/fleet_memory.py) ──
+# RIFT keeps the mission log there too (bank "rift"), as a digest every half
+# hour rather than one memory per line, so DREAM's LLM isn't kept busy. The
+# Brainfuck chatter stays out of it. RIFT_MEMORY=0 turns it off.
+# GET /memory                      where the memory is, and what's waiting
+# GET /memory/recall?q=...&bank=   what it remembers (bank: rift, nina, tina, dream)
+MEMORY = FleetMemory("rift", url=os.environ.get("RIFT_MEMORY_URL", "auto"), rift=f"http://127.0.0.1:{THIS_PORT}",
+                     enabled=os.environ.get("RIFT_MEMORY", "1") != "0")
+MEMORY_BANKS = ("rift", "nina", "tina", "dream")
+_mission_digest = Digest(MEMORY, "RIFT's mission log: the fleet's day", every_s=1800) if MEMORY.enabled else None
+if _mission_digest:
+    mission.listeners.append(lambda who, text, kind: kind != "chat" and _mission_digest.add(f"{who}: {text}"))
+
+
+@app.route("/memory")
+def memory_status():
+    return jsonify(MEMORY.status())
+
+
+@app.route("/memory/recall")
+def memory_recall():
+    q, bank = (request.args.get("q") or "").strip(), request.args.get("bank", "rift")
+    if not q:
+        return jsonify({"error": "need q"}), 400
+    if bank not in MEMORY_BANKS:
+        return jsonify({"error": f"bank: one of {', '.join(MEMORY_BANKS)}"}), 400
+    return jsonify({"bank": bank, "query": q, "memories": MEMORY.recall(q, k=6, bank=bank)})
 
 
 def _watch_fleet():

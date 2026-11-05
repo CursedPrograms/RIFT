@@ -17,6 +17,7 @@ KEEP = 500   # entries kept on disk
 _lock = threading.Lock()
 _entries = []      # {"t", "who", "text", "kind"}  kind: arrive, leave, chat, mood, note, system
 _started = None    # epoch seconds of the first entry = mission day 1
+listeners = []    # f(who, text, kind) for every new entry (app.py: the fleet's memory)
 
 
 def _load():
@@ -56,6 +57,11 @@ def add(who, text, kind="note", t=None):
             _save()
         except OSError as e:
             print(f"[RIFT] mission log not saved: {e}")
+    for f in listeners:
+        try:
+            f(who, text, kind)
+        except Exception as e:
+            print(f"[RIFT] mission listener: {e}")
 
 
 def snapshot(limit=40):

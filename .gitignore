@@ -61,3 +61,4 @@ Unity App/RIFT/Assets/StreamingAssets.meta
 # Controllers, built and kept
 !builds/
 !builds/*.exe
+memory_pending_*.jsonl

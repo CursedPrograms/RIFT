@@ -25,8 +25,8 @@
       <li><a href="#overview">Overview</a></li>
       <li><a href="#fleet">Fleet</a></li>
       <li><a href="#talk">Talk</a></li>
-      <li><a href="#run">Run</a></li>
       <li><a href="#hubs">Hubs</a></li>
+      <li><a href="#run">Run</a></li>
       <li><a href="#near">Nearby</a></li>
       <li><a href="#screens">Screens</a></li>
       <li><a href="https://github.com/CursedPrograms/RIFT">GitHub</a></li>
@@ -65,7 +65,6 @@
 </header>
 
 <main>
-
 <section id="overview">
   <div class="wrap">
     <h2>Overview</h2>
@@ -174,26 +173,6 @@
   </div>
 </section>
 
-<section id="run">
-  <div class="wrap">
-    <h2>Run</h2>
-    <h3 class="title">Start the reference hub</h3>
-    <p class="muted"><code>app.py</code> runs the fleet registry, mDNS discovery (including browsing for DREAM), the NORA integration threads, the conversations and the mission log in one Python process, with no compiling. On Windows <code>run.bat</code> does it all: it sets up <code>venv</code> and installs the requirements the first time, then starts <code>app.py</code>.</p>
-<pre><span class="p">&gt;</span> run.bat</pre>
-    <p class="muted">Or by hand (Linux / macOS):</p>
-<pre><span class="p">$</span> python3 -m venv venv
-<span class="p">$</span> source venv/bin/activate
-<span class="p">$</span> pip install --upgrade pip
-<span class="p">$</span> pip install -r requirements.txt
-<span class="p">$</span> python app.py</pre>
-    <p class="note"><strong>One hub per machine.</strong> Every hub speaks the same <code>/robots</code> + <code>/register</code> protocol on port 5000, so run one or another, not several at once.</p>
-    <h3 class="sub">Native C++ hub</h3>
-    <p class="muted"><code>PC App/App</code> is the native fleet-registry server for Windows and Linux. <code>build.sh</code> installs the dev packages it needs (asking for sudo), then builds into <code>PC App/App/bin/</code>.</p>
-<pre><span class="p">$</span> ./build.sh
-<span class="p">$</span> ./run_server.sh</pre>
-  </div>
-</section>
-
 <section id="hubs">
   <div class="wrap">
     <h2>Hubs</h2>
@@ -233,6 +212,26 @@
       </div>
     </div>
     <p class="note"><strong>Verified:</strong> every hub passes the same 32-check protocol suite and interoperates with the others over mDNS and heartbeats. Not yet run on real hardware: Linux-only paths, Bluetooth, internet sharing and the Android service.</p>
+  </div>
+</section>
+
+<section id="run">
+  <div class="wrap">
+    <h2>Run</h2>
+    <h3 class="title">Start the reference hub</h3>
+    <p class="muted"><code>app.py</code> runs the fleet registry, mDNS discovery (including browsing for DREAM), the NORA integration threads, the conversations and the mission log in one Python process, with no compiling. On Windows <code>run.bat</code> does it all: it sets up <code>venv</code> and installs the requirements the first time, then starts <code>app.py</code>.</p>
+<pre><span class="p">&gt;</span> run.bat</pre>
+    <p class="muted">Or by hand (Linux / macOS):</p>
+<pre><span class="p">$</span> python3 -m venv venv
+<span class="p">$</span> source venv/bin/activate
+<span class="p">$</span> pip install --upgrade pip
+<span class="p">$</span> pip install -r requirements.txt
+<span class="p">$</span> python app.py</pre>
+    <p class="note"><strong>One hub per machine.</strong> Every hub speaks the same <code>/robots</code> + <code>/register</code> protocol on port 5000, so run one or another, not several at once.</p>
+    <h3 class="sub">Native C++ hub</h3>
+    <p class="muted"><code>PC App/App</code> is the native fleet-registry server for Windows and Linux. <code>build.sh</code> installs the dev packages it needs (asking for sudo), then builds into <code>PC App/App/bin/</code>.</p>
+<pre><span class="p">$</span> ./build.sh
+<span class="p">$</span> ./run_server.sh</pre>
   </div>
 </section>
 
