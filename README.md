@@ -375,6 +375,8 @@ The same protocol (`/ping`, `/register`, `/robots`, `/peers`, `/mode`, dashboard
   adb install -r app/build/outputs/apk/debug/app-debug.apk
   gradlew test                                           # the hub core's 28 protocol tests, on the PC
   ```
+  Or install the ready-made one: [`Android App/apk/RIFT-debug-2026-10-30.apk`](Android%20App/apk/RIFT-debug-2026-10-30.apk).
+
   Android Studio writes `local.properties` (the SDK path); from a terminal create it yourself with `sdk.dir=C:/Users/<you>/AppData/Local/Android/Sdk`, or set `ANDROID_HOME`.
 
 `Android App/examples/Registration.kt` (an example robot registering itself) posts JSON, which every hub above accepts (only the original `app.py` is form-only).
