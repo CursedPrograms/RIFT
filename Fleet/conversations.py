@@ -63,7 +63,15 @@ PERSONALITIES = {
     "WHIP":      {"chattiness": 1, "likes": [3, 0],    "about": "quiet, watchful hexapod"},
     "ARM":       {"chattiness": 1, "likes": [1, 2],    "about": "polite and precise"},
     "DREAM":     {"chattiness": 2, "likes": [4, 1, 6], "about": "DREAM: deep, dreamy, a bit sleepy"},
+    # the programs have personalities too
+    "TINA":      {"chattiness": 1, "likes": [1, 3],    "about": "the engineer: dry and precise, checks how everyone's running"},
+    "NINA":      {"chattiness": 2, "likes": [1, 0, 4], "about": "the caretaker: asks everyone how they are, tucks them in"},
+    "AURA":      {"chattiness": 2, "likes": [3, 2, 0], "about": "the weather station: sunny-natured and obsessed with the sky",
+                  "aside": "sky"},     # slips the sky into a chat now and then (her one-word Brainfuck weather, 18-25)
+    "RITA":      {"chattiness": 1, "likes": [0, 5],    "about": "the handheld remote: eager, always in someone's hand"},
 }
+WX_U = {"sunny": 18, "cloudy": 19, "rainy": 20, "foggy": 21, "snowy": 22, "stormy": 23, "hot": 24, "cold": 25}
+ASIDE_CHANCE = 0.4
 DEFAULT_PERSONALITY = {"chattiness": 1, "likes": [0], "about": "new here"}
 
 _log = []                 # newest last: {"t", "from", "to", "u", "text", "bf", "said", "kind", "via", "ok"}
@@ -419,7 +427,27 @@ def converse(a, b, urls, phrase=None):
     # a good chat lifts both moods a little; being ignored doesn't
     _nudge_mood(a, 0.15 if ok_b else -0.15)
     _nudge_mood(b, 0.1 if ok_b else 0)
+    if ok_b:
+        _aside(a, b, urls)
     return ok_b
+
+
+def _aside(a, b, urls):
+    """A talker with an "aside" adds it after the exchange, sometimes. AURA can't help herself:
+    she beeps the sky in one word ("rain", "sun"...), whatever they were talking about."""
+    for me, other in ((a, b), (b, a)):
+        if _personality(me).get("aside") != "sky" or random.random() >= ASIDE_CHANCE:
+            continue
+        word = (_request_json(f"{urls[me]}/api/now", timeout=4) or {}).get("sky_word")
+        u = WX_U.get(word)
+        if u is None or u >= len(UTTERANCES):
+            continue
+        time.sleep(0.6)
+        ok = _chirp(f"{urls[me]}/chirp?u={u}")
+        _record({"t": time.time(), "from": me, "to": other, "u": u, "said": UTTERANCES[u]["name"], "kind": "aside",
+                 "text": UTTERANCES[u]["text"], "bf": UTTERANCES[u]["bf"], "via": "wifi", "ok": bool(ok)})
+        if ok:
+            mission.add(me, f"{me} couldn't help mentioning the weather to {other}: \"{UTTERANCES[u]['text']}\".", "chat")
 
 
 # ---- robots with minds: rock paper scissors, then words or Brainfuck

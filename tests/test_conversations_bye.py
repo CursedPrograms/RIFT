@@ -35,3 +35,17 @@ def test_bye_when_out_of_range(monkeypatch):
     assert c.goodbyes(urls, gone, now=t0 + c.OUT_OF_RANGE_S + 1) == [("NORA", "WHIP")]
     assert said == ["http://nora/chirp?u=6", "http://whip/chirp?u=13"]
     assert c.goodbyes(urls, gone, now=t0 + 60) == []                  # once
+
+
+def test_programs_have_personality_and_aura_mentions_the_sky(monkeypatch):
+    for name in ("TINA", "NINA", "AURA", "RITA"):
+        assert c._personality(name) is not c.DEFAULT_PERSONALITY
+    said = []
+    monkeypatch.setattr(c.random, "random", lambda: 0.0)                       # she always gives in
+    monkeypatch.setattr(c, "_request_json", lambda url, *a, **k: {"sky_word": "rainy"})
+    monkeypatch.setattr(c, "_chirp", lambda url: said.append(url) or True)
+    monkeypatch.setattr(c, "_record", lambda e: said.append(e["kind"]))
+    monkeypatch.setattr(c.time, "sleep", lambda s: None)
+    monkeypatch.setattr(c.mission, "add", lambda *a, **k: None)
+    c._aside("NORA", "AURA", {"NORA": "http://nora", "AURA": "http://aura"})
+    assert said == ["http://aura/chirp?u=20", "aside"]
