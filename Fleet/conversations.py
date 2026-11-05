@@ -367,19 +367,26 @@ def settled(urls):
 
 
 BUSY_REST_S = 60     # a robot that said it's busy (409) is left out of the chatter this long
+ASLEEP_REST_S = 20 * 60   # ...and one that's asleep, this long: nobody chats to a sleeper
 _busy_until = {}
 
 
 def _chirp(url):
     """True: said it. "busy": the robot declined (409 - TINA while she's working or
-    in use). False: no answer at all."""
+    in use). "asleep": declined because it's sleeping (DREAM). False: no answer at all."""
     for u in (url, url.replace("http://", "https://", 1)):
         try:
             ctx = ssl._create_unverified_context() if u.startswith("https") else None
             with urllib.request.urlopen(u, timeout=3, context=ctx):
                 return True
         except urllib.error.HTTPError as e:
-            return "busy" if e.code == 409 else False
+            if e.code != 409:
+                return False
+            try:                                  # why: DREAM says "asleep" (she isn't woken for chatter)
+                why = json.loads(e.read().decode("utf-8", "ignore")).get("reason", "")
+            except Exception:
+                why = ""
+            return "asleep" if why == "asleep" else "busy"
         except Exception:
             continue
     return False
@@ -389,19 +396,19 @@ def busy(name):
     return time.time() < _busy_until.get(name, 0)
 
 
-def _declined(who, to):
-    """who is busy: a quiet note, a minute's rest from the chatter, no hard feelings."""
-    _busy_until[who] = time.time() + BUSY_REST_S
+def _declined(who, to, why="busy"):
+    """who is busy (or asleep): a quiet note, a rest from the chatter, no hard feelings."""
+    _busy_until[who] = time.time() + (ASLEEP_REST_S if why == "asleep" else BUSY_REST_S)
     _record({"t": time.time(), "from": who, "to": to, "u": None, "said": None, "kind": "note",
-             "text": "is busy right now", "bf": "", "via": "wifi", "ok": True})
+             "text": "is asleep" if why == "asleep" else "is busy right now", "bf": "", "via": "wifi", "ok": True})
 
 
 def converse(a, b, urls, phrase=None):
     """a says a phrase to b and b answers. Logs both. Returns True if both spoke."""
     p = _pick_phrase(a, b) if phrase is None else phrase
     ok_a = _chirp(f"{urls[a]}/chirp?u={p}")
-    if ok_a == "busy":
-        _declined(a, b)
+    if ok_a in ("busy", "asleep"):
+        _declined(a, b, ok_a)
         return False
     if ok_a:                               # the visit remembers what was actually said
         v = _visit(a, b)
@@ -417,8 +424,8 @@ def converse(a, b, urls, phrase=None):
     time.sleep(say_seconds(p) + 0.6)   # let a finish before b answers
     r = 7 + p
     ok_b = _chirp(f"{urls[b]}/chirp?u={r}")
-    if ok_b == "busy":
-        _declined(b, a)
+    if ok_b in ("busy", "asleep"):
+        _declined(b, a, ok_b)
         return False
     _record({"t": time.time(), "from": b, "to": a, "u": r, "said": UTTERANCES[r]["name"], "kind": "reply",
              "text": UTTERANCES[r]["text"], "bf": UTTERANCES[r]["bf"], "via": "wifi", "ok": ok_b})

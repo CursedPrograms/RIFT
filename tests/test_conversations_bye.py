@@ -49,3 +49,14 @@ def test_programs_have_personality_and_aura_mentions_the_sky(monkeypatch):
     monkeypatch.setattr(c.mission, "add", lambda *a, **k: None)
     c._aside("NORA", "AURA", {"NORA": "http://nora", "AURA": "http://aura"})
     assert said == ["http://aura/chirp?u=20", "aside"]
+
+
+def test_a_sleeper_is_left_alone(monkeypatch):
+    c._busy_until.clear()
+    noted = []
+    monkeypatch.setattr(c, "_record", lambda e: noted.append(e["text"]))
+    c._declined("DREAM", "AURA", "asleep")
+    assert noted == ["is asleep"] and c.busy("DREAM")
+    assert c._busy_until["DREAM"] - time.time() > 15 * 60          # twenty minutes, not one
+    c._declined("TINA", "NORA")
+    assert noted[-1] == "is busy right now" and c._busy_until["TINA"] - time.time() < 120
