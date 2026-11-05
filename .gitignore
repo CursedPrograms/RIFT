@@ -63,3 +63,6 @@ Unity App/RIFT/Assets/StreamingAssets.meta
 !builds/
 !builds/*.exe
 memory_pending_*.jsonl
+
+# this PC's network devices for the fleet (Fleet/fleet_net.py)
+network.json

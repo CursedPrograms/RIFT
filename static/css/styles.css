@@ -142,3 +142,16 @@ h3 {
 #dreamCall .dc-line.user { align-self: flex-end; background: var(--button-hover-bg); border: 1px solid var(--border); }
 #dreamCall .dc-line.assistant { align-self: flex-start; background: var(--background); border: 1px solid var(--accent); }
 #dreamCall .dc-caption { color: var(--text-sec); font-size: 0.8em; }
+
+/* Network devices: the internet one and the fleet one */
+#netSection .mode-row select { max-width: 320px; }
+#netSection label { color: var(--text-sec); font-size: 0.85rem; }
+#netStatus { color: var(--text-sec); font-size: 0.8rem; }
+#netSection .note { color: var(--text-sec); font-size: 0.8rem; margin: 6px 0 0; }
+
+/* RIFT's side: QR codes to join his WiFi and open his page */
+#qrSide { position: fixed; top: 16px; right: 16px; display: flex; flex-direction: column; gap: 12px; z-index: 5; }
+#qrSide figure { margin: 0; padding: 8px; background: var(--panel, #1a1a1a); border: 1px solid var(--border); border-radius: 10px; text-align: center; }
+#qrSide img { display: block; width: 150px; height: 150px; border-radius: 4px; }
+#qrSide figcaption { color: var(--text-sec); font-size: 0.75rem; margin-top: 6px; max-width: 150px; word-break: break-all; }
+@media (max-width: 1100px) { #qrSide { position: static; flex-direction: row; justify-content: center; margin: 12px 0; } }

@@ -6,15 +6,25 @@ function renderNodes(el, items, emptyText) {
         el.innerHTML = `<p class="empty">${emptyText}</p>`;
         return;
     }
-    el.innerHTML = items.map(item => `
+    el.innerHTML = items.map(item => {
+        const links = item.links || (item.url ? [{ label: 'Open', url: item.url }] : []);
+        return `
         <div class="node-box">
-            ${item.url ? `<a class="name" href="${item.url}" target="_blank" rel="noopener">${item.name}</a>`
-                       : `<span class="name">${item.name}</span>`}
+            ${links.length ? `<a class="name" href="${links[0].url}" target="_blank" rel="noopener">${item.name}</a>`
+                           : `<span class="name">${item.name}</span>`}
             <span class="meta">${item.meta}</span>
-            ${item.url ? `<a class="open" href="${item.url}" target="_blank" rel="noopener">Open &rarr;</a>` : ''}
-        </div>
-    `).join('');
+            ${links.map(l => `<a class="open" href="${l.url}" target="_blank" rel="noopener">${l.label} &rarr;</a>`).join('')}
+        </div>`;
+    }).join('');
 }
+
+// A program on RIFT's own PC registers as 127.0.0.1 (or the PC's address on another network): from a
+// phone on RIFT's WiFi that's the phone itself, so it's reached the way this page was.
+function reachable(ip) {
+    if (!ip || /^(127\.|localhost$|0\.0\.0\.0$)/.test(ip) || ip === RIFT_IP) return location.hostname;
+    return ip;
+}
+const RIFT_IP = (document.getElementById('self')?.textContent.match(/(\d+\.\d+\.\d+\.\d+)/) || [])[1] || '';
 
 // Each robot's own web page: a web:<port> capability if it sent one, else
 // its usual port (same table as app.py's WEB_PORTS).
@@ -24,7 +34,7 @@ function webUrl(r) {
     const cap = prefix => (caps.find(c => c.startsWith(prefix) && /^\d+$/.test(c.slice(prefix.length))) || '').slice(prefix.length);
     const port = cap('web:') || WEB_PORTS[(r.name || '').toUpperCase()] || cap('talk:');
     if (!port) return null;
-    return `${(r.name || '').toUpperCase() === 'DREAM' ? 'https' : 'http'}://${r.ip}:${port}/`;
+    return `${(r.name || '').toUpperCase() === 'DREAM' ? 'https' : 'http'}://${reachable(r.ip)}:${port}/`;
 }
 
 // The whole fleet with an Open button per robot. app.py serves /fleet (its
@@ -34,11 +44,17 @@ function refreshRobots() {
     fetch('/fleet')
         .then(r => r.ok ? r.json() : fetch('/robots').then(r2 => r2.json()))
         .then(data => {
-            const items = (data.robots || []).map(r => ({
-                name: r.name,
-                url: r.url || webUrl(r),
-                meta: `${r.type} @ ${r.ip} — ${(r.capabilities || []).join(', ') || 'no capabilities'}`,
-            }));
+            const items = (data.robots || []).map(r => {
+                const url = r.url ? r.url.replace(/\/\/(127\.[\d.]+|localhost)(?=[:/])/, `//${location.hostname}`) : webUrl(r);
+                // DREAM has two: her own page (her avatar, her body) and her dashboard
+                const links = (r.name || '').toUpperCase() === 'DREAM' && url
+                    ? [{ label: 'DREAM', url: new URL('dream.html', url).href }, { label: 'Dashboard', url }]
+                    : null;
+                return {
+                    name: r.name, url, links,
+                    meta: `${r.type} @ ${r.ip} — ${(r.capabilities || []).join(', ') || 'no capabilities'}`,
+                };
+            });
             renderNodes(robotsEl, items, 'No robots online yet.');
         })
         .catch(() => {});
@@ -204,6 +220,65 @@ modeApply.addEventListener('click', () => {
 
 syncBtPortVisibility();
 loadMode();
+
+// ── Network devices: the internet one and the fleet one (GET/POST /network: Fleet/fleet_net.py) ──
+
+const netInternet  = document.getElementById('netInternet');
+const netFleet     = document.getElementById('netFleet');
+const netSave      = document.getElementById('netSave');
+const netBroadcast = document.getElementById('netBroadcast');
+const netStatus    = document.getElementById('netStatus');
+const netNote      = document.getElementById('netNote');
+let netOn = false;
+
+function deviceLabel(d) {
+    const what = d.kind === 'wifi' ? 'WiFi' : 'Ethernet';
+    return `${d.name} (${what}${d.internet ? ', internet' : d.up ? '' : ', not connected'}) - ${d.description}`;
+}
+
+function showNetwork(d, message) {
+    if (!d.supported) {
+        netStatus.textContent = 'Windows only: on Linux the WiFi ladder hosts';
+        [netInternet, netFleet, netSave, netBroadcast].forEach(el => { el.disabled = true; });
+        return;
+    }
+    for (const [el, chosen] of [[netInternet, d.internet], [netFleet, d.fleet]]) {
+        el.innerHTML = d.devices.map(x => `<option value="${esc(x.name)}">${esc(deviceLabel(x))}</option>`).join('');
+        if (chosen) el.value = chosen;
+    }
+    netOn = d.broadcasting;
+    // the side's page QR: on RIFT's own WiFi, phones find him at the hotspot's address
+    const pageUrl = netOn && d.how === 'hotspot' ? `http://192.168.137.1:${location.port || 5000}/` : `${location.origin}/`;
+    document.getElementById('qrPage').src = `/qr.svg?for=page&url=${encodeURIComponent(pageUrl)}`;
+    document.getElementById('qrPageText').textContent = `Open RIFT: ${pageUrl.replace('http://', '')}`;
+    netBroadcast.textContent = netOn ? 'Stop broadcasting' : 'Broadcast RIFT';
+    const live = netOn
+        ? (d.how === 'hotspot' ? `broadcasting ${d.ssid} on ${d.fleet}, ${d.clients} connected` : `sharing to the router on ${d.fleet}`)
+        : 'not broadcasting';
+    netStatus.textContent = message ? `${message} (${live})` : live;
+    netNote.textContent = d.note || (d.how === 'hotspot'
+        ? `Windows' Mobile Hotspot: WiFi ${d.ssid} with the fleet password, sharing ${d.internet}. RIFT is 192.168.137.1 on it.`
+        : '');
+}
+
+function loadNetwork() {
+    fetch('/network').then(r => r.json()).then(d => showNetwork(d)).catch(() => {});
+}
+
+function postNetwork(body, busy) {
+    netStatus.textContent = busy;
+    fetch('/network', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => { if (ok) showNetwork(d, d.message); else netStatus.textContent = d.error || 'failed'; })
+        .catch(() => { netStatus.textContent = 'network error'; });
+}
+
+netSave.addEventListener('click', () => postNetwork({ internet: netInternet.value, fleet: netFleet.value }, 'saving…'));
+netBroadcast.addEventListener('click', () =>
+    postNetwork({ internet: netInternet.value, fleet: netFleet.value, broadcast: !netOn }, netOn ? 'stopping…' : 'starting…'));
+
+loadNetwork();
+setInterval(loadNetwork, 30000);   // the auto broadcast comes and goes by itself
 
 // ── Ask & tell (POST /talk with verb ask / do: Fleet/relay.py) ──────────
 

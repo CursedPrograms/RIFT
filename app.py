@@ -6,6 +6,7 @@ They implement the same protocol on the same port (5000), so run one or
 the other, not both, on a given machine.
 """
 
+import io
 import os
 import re
 import socket
@@ -21,6 +22,7 @@ from Fleet import conversations, locks, mission, music, relay
 from Fleet.rift_board import RiftBoard
 from Fleet.bt_autopair import start_autopair
 from Fleet import near_map
+from Fleet import fleet_net
 from Fleet.fleet_near import FleetNear
 from Fleet.fleet_memory import FleetMemory, Digest
 
@@ -119,6 +121,26 @@ def register():
     return "OK"
 
 
+_LOOPBACK = re.compile(r"^(127\.\d+\.\d+\.\d+|::1|localhost)$")
+
+
+def _for_asker(roster):
+    """A program on RIFT's own PC registers as 127.0.0.1: to anyone else (a phone or RITA on RIFT's
+    WiFi, the Kotlin apps) that address is themselves. Hand them the address they reached RIFT on."""
+    here = request.host.rsplit(":", 1)[0].strip("[]")
+    if _LOOPBACK.match(here):
+        return roster
+    out = []
+    for r in roster:
+        r = dict(r)
+        if _LOOPBACK.match(str(r.get("ip", ""))):
+            r["ip"] = here
+        if r.get("url"):
+            r["url"] = re.sub(r"//(127\.\d+\.\d+\.\d+|localhost)(?=[:/])", "//" + here, r["url"])
+        out.append(r)
+    return out
+
+
 @app.route("/robots")
 def robots():
     _prune_fleet()
@@ -127,7 +149,7 @@ def robots():
             {"name": name, "ip": m["ip"], "type": m["type"], "capabilities": m["capabilities"]}
             for name, m in _fleet.items()
         ]
-    return jsonify({"authority": THIS_NAME, "robots": roster})
+    return jsonify({"authority": THIS_NAME, "robots": _for_asker(roster)})
 
 
 def _fleet_snapshot():
@@ -291,7 +313,7 @@ def _whole_fleet():
 
 @app.route("/fleet")
 def fleet():
-    return jsonify({"robots": _whole_fleet()})
+    return jsonify({"robots": _for_asker(_whole_fleet())})
 
 
 # ── Every robot's wheel lock at once (Fleet/locks.py) ───────────────────────
@@ -514,6 +536,44 @@ def set_mode():
         return jsonify({"mode": _transport_mode, "bt_port": _bt_port})
 
 
+# ── The network devices: which one is the internet, which one carries the fleet (Fleet/fleet_net.py)
+
+@app.route("/network")
+def get_network():
+    return jsonify(fleet_net.status())
+
+
+@app.route("/qr.svg")
+def qr_svg():
+    """A QR code for RIFT's side: ?for=wifi joins the fleet WiFi, ?for=page opens this page."""
+    import segno
+    if request.args.get("for") == "wifi":
+        text = f"WIFI:T:WPA;S:{fleet_net.FLEET_SSID};P:{fleet_net.FLEET_PASSWORD};;"
+    else:
+        text = request.args.get("url") or f"http://{MY_IP}:{THIS_PORT}/"
+    buf = io.BytesIO()
+    segno.make(text, error="m").save(buf, kind="svg", scale=6, border=2, dark="#000000", light="#ffffff")
+    return app.response_class(buf.getvalue(), mimetype="image/svg+xml", headers={"Cache-Control": "no-store"})
+
+
+@app.route("/network", methods=["POST"])
+def set_network():
+    data = request.get_json(silent=True) or request.form
+    if data.get("internet") or data.get("fleet"):
+        ok, msg = fleet_net.choose((data.get("internet") or "").strip(), (data.get("fleet") or "").strip())
+        if not ok:
+            return jsonify({"error": msg}), 400
+    if "broadcast" in data:
+        ok, msg = fleet_net.broadcast(str(data.get("broadcast")).lower() in ("1", "true", "on"))
+        if not ok:
+            return jsonify({"error": msg}), 409
+    else:
+        msg = "saved"
+    out = fleet_net.status()
+    out["message"] = msg
+    return jsonify(out)
+
+
 # ── Zeroconf: publish self, watch for RIFT and DREAM peers ─────────────
 
 class _PeerListener:
@@ -565,6 +625,7 @@ if __name__ == "__main__":
 
     with _mode_lock:
         _restart_fleet_authority(_transport_mode)
+    fleet_net.keep_broadcasting()   # the fleet's WiFi, RIFT, on the chosen device (Fleet/fleet_net.py)
     if NORA_HUB:
         print(f"[RIFT] NORA is the hub (RIFT_NORA_HUB=1): announcing to her as fleet authority "
               f"(mode: {_transport_mode})")
