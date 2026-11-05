@@ -69,6 +69,7 @@ PERSONALITIES = {
     "AURA":      {"chattiness": 2, "likes": [3, 2, 0], "about": "the weather station: sunny-natured and obsessed with the sky",
                   "aside": "sky"},     # slips the sky into a chat now and then (her one-word Brainfuck weather, 18-25)
     "RITA":      {"chattiness": 1, "likes": [0, 5],    "about": "the handheld remote: eager, always in someone's hand"},
+    "FLORA":     {"chattiness": 1, "likes": [2, 4, 0], "about": "the gardener: planted, patient, happy when it rains"},
 }
 WX_U = {"sunny": 18, "cloudy": 19, "rainy": 20, "foggy": 21, "snowy": 22, "stormy": 23, "hot": 24, "cold": 25}
 ASIDE_CHANCE = 0.4

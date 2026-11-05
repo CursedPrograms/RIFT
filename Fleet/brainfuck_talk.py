@@ -69,6 +69,7 @@ SKETCHES = [
     "ARM-Robot-v01/scripts/arm",
     "RIFT/arduino/rift_link",
     "RITA/scripts/esp32",           # RITA joins the conversations on her speaker
+    "FLORA-Robot-v00/scripts/esp32",  # FLORA, the gardener, on her buzzer
 ]
 
 # One tone per symbol (Hz before the robot's voice scaling) and its length
