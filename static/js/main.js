@@ -234,6 +234,10 @@ function showCore(c) {
     if (c.music) parts.push(`music <b>${esc(c.music)}</b>`);
     const d = Object.entries(c.distances_cm || {}).map(([k, v]) => `${esc(k)} ${esc(v)} cm`).join(', ');
     if (d) parts.push(d);
+    if (c.temp_c != null || c.humidity != null)       // her temperature / humidity sensor
+        parts.push([c.temp_c != null ? `<b>${esc(c.temp_c)}°C</b>` : '', c.humidity != null ? `${esc(c.humidity)}% humidity` : ''].filter(Boolean).join(' '));
+    if (c.outside)                                     // AURA: outside, from Open-Meteo
+        parts.push(`outside <b>${esc(c.outside.temp_c)}°C</b>${c.outside.weather ? ' ' + esc(c.outside.weather) : ''}${c.outside.humidity != null ? `, ${esc(c.outside.humidity)}%` : ''}`);
     return parts.join(' &middot; ') || 'no common fields in her status';
 }
 

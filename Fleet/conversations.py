@@ -29,7 +29,7 @@ import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
-from Fleet import mission
+from Fleet import mission, near_map
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Where NORA is when she hosts her own fallback "NORA" AP (no "RIFT" network around). Normally
@@ -109,6 +109,16 @@ BYE_REST_S = 10 * 60    # after goodbye, a pair leaves each other alone this lon
 BYE_AFTER = 3           # phrases in a visit before either may say goodbye
 _visits = {}            # frozenset({a, b}) -> {"said": [u, ...], "last": t, "bye": t or 0}
 
+# Real robots (with bodies, that drive about) only say goodbye when they go out of each other's
+# range, not when a chat runs out: "bye" means leaving. The PC programs can say it any time.
+VIRTUAL = {"DREAM", "NINA", "TINA", "AURA", "RIFT", "LYCEA"}
+OUT_OF_RANGE_S = 20     # not heard by each other this long (after being near) = gone
+_near_seen = {}         # frozenset({a, b}) -> when one last heard the other (ESP-NOW / Bluetooth LE)
+
+
+def real(name):
+    return str(name).upper() not in VIRTUAL
+
 
 def _visit(a, b):
     """The pair's current visit: what's been said since they last said hello. A new one
@@ -143,6 +153,8 @@ def _pick_phrase(name, other):
     weights[HELLO] = 0                                     # they've greeted already
     weights[HOW] = 0 if HOW in said else weights[HOW] + (3 if len(said) == 1 else 0)
     weights[BYE] = 0 if len(said) < BYE_AFTER else 0.4 + 0.3 * len(said) + 2 * max(-mood, 0)
+    if real(name) or real(other):                          # a real robot only says bye when it leaves
+        weights[BYE] = 0
     for u in said[-3:]:                                    # don't repeat what was just said
         weights[u] *= 0.15
     return random.choices(range(7), weights=weights)[0]
@@ -482,14 +494,15 @@ def peer_converse(a, b, urls):
         for i in range(turns):
             me, them = speakers[i % 2], speakers[(i + 1) % 2]
             msg = {"from": them, "mode": mode, "text": last["text"], "u": last["u"],
-                   "mind": last["mind"] if i else snaps[them], "opening": i < 2, "closing": i >= turns - 2}
+                   "mind": last["mind"] if i else snaps[them], "opening": i < 2,
+                   "closing": i >= turns - 2 and not (real(me) or real(them))}
             ans = _request_json(f"{urls[me]}/peer/say", msg, timeout=PEER_SAY_TIMEOUT_S)
             if not ans or not ans.get("ok"):
                 why = (ans or {}).get("reason") or "no answer"
                 _record({"t": time.time(), "from": me, "to": them, "u": None, "said": None, "kind": "note",
                          "text": f"stopped talking ({why})", "bf": "", "via": "wifi", "ok": False})
-                if mode == "brainfuck":
-                    _get(f"{urls[them]}/chirp?u=6")      # the other one says bye anyway
+                if mode == "brainfuck" and not real(them):
+                    _get(f"{urls[them]}/chirp?u=6")      # the other one says bye anyway (a real one waits to leave)
                 break
             u = ans.get("u")
             bf = UTTERANCES[u]["bf"] if isinstance(u, int) and 0 <= u < len(UTTERANCES) else ""
@@ -562,6 +575,54 @@ def snapshot():
             "personalities": PERSONALITIES}
 
 
+def _heard_pairs(near):
+    """Every pair where one hears the other right now, from the robots' own /near lists."""
+    pairs = set()
+    for name, st in ((near or {}).get("robots") or {}).items():
+        for peer in (st or {}).get("robots", []):
+            other = str(peer.get("name", "")).upper()
+            if other and other != name.upper():
+                pairs.add(frozenset((name.upper(), other)))
+    return pairs
+
+
+def goodbyes(urls, near, now=None):
+    """Real robots that were talking and have gone out of each other's range say goodbye: the one
+    leaving says "bye", the other "bye!". Only for pairs that were heard near each other before, and
+    only when a robot that reports /near could have heard them (MILA alone can't tell)."""
+    now = now or time.time()
+    heard = _heard_pairs(near)
+    reporters = {n.upper() for n in ((near or {}).get("robots") or {})}
+    said_bye = []
+    for key in heard:
+        _near_seen[key] = now
+    for key, v in list(_visits.items()):
+        names = sorted(key)
+        if len(names) != 2 or not v["said"] or v["bye"] or not any(real(n) for n in names):
+            continue
+        if not reporters & set(names) or key not in _near_seen or key in heard:
+            continue
+        if now - _near_seen[key] < OUT_OF_RANGE_S:
+            continue
+        leaver = next((n for n in names if real(n) and n in urls), None)
+        other = names[1] if leaver == names[0] else names[0]
+        v["bye"] = now
+        if leaver:
+            ok = _chirp(f"{urls[leaver]}/chirp?u={BYE}")
+            _record({"t": time.time(), "from": leaver, "to": other, "u": BYE, "said": UTTERANCES[BYE]["name"],
+                     "kind": "phrase", "text": UTTERANCES[BYE]["text"], "bf": UTTERANCES[BYE]["bf"], "via": "wifi",
+                     "ok": bool(ok), "why": "out of range"})
+            if other in urls:
+                time.sleep(say_seconds(BYE) + 0.6)
+                ok_b = _chirp(f"{urls[other]}/chirp?u={7 + BYE}")
+                _record({"t": time.time(), "from": other, "to": leaver, "u": 7 + BYE, "said": UTTERANCES[7 + BYE]["name"],
+                         "kind": "reply", "text": UTTERANCES[7 + BYE]["text"], "bf": UTTERANCES[7 + BYE]["bf"],
+                         "via": "wifi", "ok": bool(ok_b)})
+        mission.add(leaver or names[0], f"{leaver or names[0]} went out of range of {other} and said goodbye.", "chat")
+        said_bye.append(tuple(names))
+    return said_bye
+
+
 def start(get_fleet_snapshot, min_gap=25, max_gap=60):
     """Background thread: a conversation every min_gap-max_gap s, and NORA's IR
     log merged every 10 s. get_fleet_snapshot() returns RIFT's own roster."""
@@ -575,6 +636,7 @@ def start(get_fleet_snapshot, min_gap=25, max_gap=60):
                 merge_nora_ir_log()
                 urls = settled(talkers(get_fleet_snapshot()))
                 maybe_peer_chat(urls)
+                goodbyes(urls, near_map.collect(get_fleet_snapshot()))   # real robots: bye when out of range
                 if time.time() >= next_chat:
                     urls = {n: u for n, u in urls.items() if n not in _in_session and not busy(n)}
                     if len(urls) >= 2:

@@ -66,7 +66,7 @@ def make(tmp_path, monkeypatch):
 
 
 def test_the_ladder_order():
-    assert fl.LADDER[:4] == ["RIFT", "DREAM", "NINA", "TINA"]
+    assert fl.LADDER[:5] == ["RIFT", "DREAM", "NINA", "TINA", "AURA"]
     assert fl.rank("ARMCTL") < fl.rank("NORA") < fl.rank("ARM") < fl.rank("MILA")
 
 

@@ -253,3 +253,15 @@ def test_kida01_moves_ask_and_never_unlocks(fleet):
     assert out["tier"] == "moving" and not out["ok"]
     code, out = relay.do([fleet.robot("kida01")], "KIDA01", "motor_lock_off", confirmed=True)
     assert code == 403 and out["tier"] == "never"
+
+
+def test_core_climate():
+    """Temperature and humidity from any robot, AURA's outside weather, and NORA's -1 = none."""
+    from Fleet import relay
+    assert relay.core("MILA", {"temp": 22.5, "hum": 41})["temp_c"] == 22.5
+    nora = relay.core("NORA", {"F": 30, "temp": -1, "hum": -1})
+    assert "temp_c" not in nora and "humidity" not in nora
+    aura = relay.core("AURA", {"mode": "weather", "temp": 21.0, "hum": 50, "outside_temp": 27.3,
+                               "outside_hum": 43, "weather": "mostly clear"})
+    assert aura["mode"] == "weather" and aura["temp_c"] == 21.0
+    assert aura["outside"] == {"temp_c": 27.3, "humidity": 43.0, "weather": "mostly clear"}

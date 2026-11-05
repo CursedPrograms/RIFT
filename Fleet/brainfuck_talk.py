@@ -8,7 +8,9 @@ travels over IR or WiFi; RIFT's log shows the program and what it prints.
 Utterances 0-6 are the phrases, 7-13 the matching replies:
     0 hello  1 how are you  2 happy  3 curious  4 sleepy  5 let's play  6 bye
 and 14-16 the rock-paper-scissors moves (R, P, S) for the robots' games
-(Fleet/conversations.py's rps()).
+(Fleet/conversations.py's rps()). 17 on is the weather: 17 asks "wx?" (DREAM asking
+AURA, the weather station), 18-25 are AURA's answers. Only the PCs say those, so
+they're in talk_bf.json but not in the robots' talk_bf.h.
 
 Run this after changing PHRASES. It writes the same talk_bf.h into every
 robot sketch it finds next to this repo (and Fleet/talk_bf.json for RIFT),
@@ -39,6 +41,20 @@ MOVES = [
     ("paper",    "P"),
     ("scissors", "S"),
 ]
+
+# The weather, utterances 17 on: the question, then AURA's answers (name, what it prints).
+WEATHER_ASK = ("weather?", "wx?")
+WEATHER = [
+    ("sunny",   "sun"),
+    ("cloudy",  "cloud"),
+    ("rainy",   "rain"),
+    ("foggy",   "fog"),
+    ("snowy",   "snow"),
+    ("stormy",  "storm"),
+    ("hot",     "hot"),
+    ("cold",    "cold"),
+]
+WEATHER_FIRST = 2 * len(PHRASES) + len(MOVES)        # 17
 
 # Sketches that speak or log the phrases (relative to the GitHub folder).
 SKETCHES = [
@@ -116,7 +132,7 @@ def run_bf(code, max_steps=None):
 
 
 def utterances():
-    """[(index, name, kind, text, code)] - phrases 0-6, replies 7-13, moves 14-16."""
+    """[(index, name, kind, text, code)] - phrases 0-6, replies 7-13, moves 14-16, the weather 17-25."""
     out = []
     for i, (name, said, reply) in enumerate(PHRASES):
         out.append((i, name, "phrase", said, compile_text(said)))
@@ -124,6 +140,9 @@ def utterances():
         out.append((7 + i, name, "reply", reply, compile_text(reply)))
     for i, (name, text) in enumerate(MOVES):
         out.append((2 * len(PHRASES) + i, name, "move", text, compile_text(text)))
+    out.append((WEATHER_FIRST, WEATHER_ASK[0], "weather", WEATHER_ASK[1], compile_text(WEATHER_ASK[1])))
+    for i, (name, text) in enumerate(WEATHER):
+        out.append((WEATHER_FIRST + 1 + i, name, "weather", text, compile_text(text)))
     for idx, name, kind, text, code in out:
         assert run_bf(code) == text, (idx, code)
     return out
@@ -222,7 +241,7 @@ def main():
     utts = utterances()
     for idx, name, kind, text, code in utts:
         print("%2d %-12s %-6s %-5s %4.1fs  %s" % (idx, name, kind, text, seconds(code), code))
-    h = header(utts)
+    h = header([u for u in utts if u[2] != "weather"])   # the robots don't talk weather: PCs only
     for rel in SKETCHES:
         folder = os.path.join(GITHUB, rel)
         if os.path.isdir(folder):

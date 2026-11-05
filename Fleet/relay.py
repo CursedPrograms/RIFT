@@ -167,6 +167,33 @@ def core(name, status):
             out["music"] = "playing" if s["music_playing"] else "stopped"
         if not isinstance(s.get("moving"), bool) and "direction" in s:
             out["moving"] = str(s["direction"]).upper() not in ("STOPPED", "STOP", "")
+    out.update(climate(s))
+    return out
+
+
+def _reading(v, lo, hi):
+    try:
+        v = float(v)
+    except (TypeError, ValueError):
+        return None
+    return v if lo <= v <= hi else None
+
+
+def climate(s):
+    """Temperature and humidity, for any robot that reports them (MILA's /status, NORA's /sensors,
+    AURA's own sensor), and AURA's outside weather (Open-Meteo is her outside sensor).
+    NORA without her AHT10 sends -1 / -1: that's no reading."""
+    out = {}
+    temp, hum = _reading(s.get("temp"), -40, 85), _reading(s.get("hum"), 0.1, 100)
+    if not (temp == -1 and hum is None):
+        if temp is not None:
+            out["temp_c"] = round(temp, 1)
+        if hum is not None:
+            out["humidity"] = round(hum, 1)
+    outside = _reading(s.get("outside_temp"), -60, 60)
+    if outside is not None:
+        out["outside"] = {"temp_c": round(outside, 1), "humidity": _reading(s.get("outside_hum"), 0, 100),
+                          "weather": s.get("weather")}
     return out
 
 
