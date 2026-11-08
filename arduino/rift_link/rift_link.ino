@@ -24,6 +24,8 @@
  *                       sleepy, play, bye) to robot r over IR, after beeping it
  *   TALK:<u>            beep Brainfuck utterance u (0-13) on the buzzer
  *   BEEP:<hz>:<ms>      a plain beep
+ *   MUTE:<0|1>          RIFT's talking muted (Fleet/talk_mute.py): TALK says nothing,
+ *                       SAY sends its phrase over IR without beeping it first
  *   Every IR frame it hears is reported as
  *   IR:<protocol>:<address hex>:<command hex>[:R]   (R = a held-button repeat)
  *
@@ -84,6 +86,10 @@ void irSend(uint16_t address, uint8_t command) {
 
 void startTalking(int u) {
   if (u < 0 || u >= TALK_UTTERANCES) return;
+  if (talkMuted) {                    // quiet: a pending phrase goes straight out over IR
+    if (pendingAddr) { irSend(pendingAddr, pendingCode); pendingAddr = 0; }
+    return;
+  }
   IrReceiver.stop();                  // tone() needs Timer2
   talkStart(u);
   talking = true;
@@ -111,6 +117,9 @@ void handleLine(String cmd) {
     Serial.println("OK");
   } else if (cmd.startsWith("TALK:")) {
     startTalking(cmd.substring(5).toInt());
+    Serial.println("OK");
+  } else if (cmd.startsWith("MUTE:")) {
+    talkMuted = cmd.substring(5).toInt() != 0;
     Serial.println("OK");
   } else if (cmd.startsWith("BEEP:")) {
     int sep = cmd.indexOf(':', 5);

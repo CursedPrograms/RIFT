@@ -12,6 +12,8 @@ found (or if pyserial isn't installed) everything here is a quiet no-op.
     board.say("mila", 0)          beep a phrase, then send it to a robot
     board.talk(7)                 beep a Brainfuck utterance on the buzzer
     board.heard(20)               the last IR frames it picked up
+    board.set_muted(True)         RIFT's talking muted (Fleet/talk_mute.py): no beeps,
+                                  SAY still sends the phrase over IR
 """
 
 import re
@@ -38,6 +40,8 @@ class RiftBoard:
         self._lock = threading.Lock()
         self._heard = deque(maxlen=50)
         self._on_ir = on_ir
+        self._muted = False
+        self._muted_sent = None     # what the board was last told (None: tell it again)
 
     @property
     def connected(self):
@@ -76,6 +80,7 @@ class RiftBoard:
                     ser = self._probe(p.device)
                     if ser:
                         self._ser, self.port = ser, p.device
+                        self._muted_sent = None
                         print(f"[RIFT] Own board found on {p.device} (IR + buzzer)")
                         break
                 if self._ser is None:
@@ -117,10 +122,17 @@ class RiftBoard:
         return self._send(f"SAY:{robot}:{int(phrase)}")
 
     def talk(self, utterance):
+        if self._muted:
+            return self.connected       # muted: nothing to say out loud
         return self._send(f"TALK:{int(utterance)}")
+
+    def set_muted(self, muted):
+        self._muted = bool(muted)
+        if self.connected and self._muted_sent != self._muted and self._send(f"MUTE:{int(self._muted)}"):
+            self._muted_sent = self._muted
 
     def heard(self, n=20):
         return list(self._heard)[-n:]
 
     def status(self):
-        return {"connected": self.connected, "port": self.port, "heard": self.heard(10)}
+        return {"connected": self.connected, "port": self.port, "heard": self.heard(10), "talk_muted": self._muted}

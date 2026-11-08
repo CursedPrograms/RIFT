@@ -18,6 +18,10 @@ they're free (nobody is with them): RIFT referees a game of rock paper
 scissors (both beep their move, utterances 14-16), the winner picks words or
 Brainfuck, and RIFT relays a few turns between them. They still chirp with the
 rest of the fleet as before.
+
+Every robot has two talk switches (Fleet/talk_mute.py: her /talkmute, or RIFT's): with her
+sound off she still chats but isn't heard (the log marks her lines "silent"); with her chat
+off she's left out of the conversations altogether, the peer ones too.
 """
 import json
 import os
@@ -29,7 +33,7 @@ import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
-from Fleet import mission, near_map
+from Fleet import mission, near_map, talk_mute
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Where NORA is when she hosts her own fallback "NORA" AP (no "RIFT" network around). Normally
@@ -373,12 +377,16 @@ _busy_until = {}
 
 def _chirp(url):
     """True: said it. "busy": the robot declined (409 - TINA while she's working or
-    in use). "asleep": declined because it's sleeping (DREAM). False: no answer at all."""
+    in use). "asleep": declined because it's sleeping (DREAM). "chat_off": her chat switch
+    is off. "silent": said, but her sound switch is off. False: no answer at all."""
     for u in (url, url.replace("http://", "https://", 1)):
         try:
             ctx = ssl._create_unverified_context() if u.startswith("https") else None
-            with urllib.request.urlopen(u, timeout=3, context=ctx):
-                return True
+            with urllib.request.urlopen(u, timeout=3, context=ctx) as r:
+                try:                              # {"silent": true}: her sound is off, she said it quietly
+                    return "silent" if json.loads(r.read() or b"{}").get("silent") else True
+                except (ValueError, AttributeError):
+                    return True
         except urllib.error.HTTPError as e:
             if e.code != 409:
                 return False
@@ -386,6 +394,8 @@ def _chirp(url):
                 why = json.loads(e.read().decode("utf-8", "ignore")).get("reason", "")
             except Exception:
                 why = ""
+            if why in ("chat_off", "muted"):       # her chat switch is off (her own)
+                return "chat_off"
             return "asleep" if why == "asleep" else "busy"
         except Exception:
             continue
@@ -407,6 +417,11 @@ def converse(a, b, urls, phrase=None):
     """a says a phrase to b and b answers. Logs both. Returns True if both spoke."""
     p = _pick_phrase(a, b) if phrase is None else phrase
     ok_a = _chirp(f"{urls[a]}/chirp?u={p}")
+    if ok_a == "chat_off":
+        talk_mute.heard(a, chat_off=True)
+        return False
+    if ok_a:
+        talk_mute.heard(a, muted=ok_a == "silent")
     if ok_a in ("busy", "asleep"):
         _declined(a, b, ok_a)
         return False
@@ -417,18 +432,25 @@ def converse(a, b, urls, phrase=None):
         if p == BYE:
             v["bye"] = time.time()
     _record({"t": time.time(), "from": a, "to": b, "u": p, "said": UTTERANCES[p]["name"], "kind": "phrase",
-             "text": UTTERANCES[p]["text"], "bf": UTTERANCES[p]["bf"], "via": "wifi", "ok": ok_a})
+             "text": UTTERANCES[p]["text"], "bf": UTTERANCES[p]["bf"], "via": "wifi", "ok": bool(ok_a),
+             "silent": ok_a == "silent"})
     if not ok_a:
         _nudge_mood(a, -0.1)
         return False
     time.sleep(say_seconds(p) + 0.6)   # let a finish before b answers
     r = 7 + p
     ok_b = _chirp(f"{urls[b]}/chirp?u={r}")
+    if ok_b == "chat_off":
+        talk_mute.heard(b, chat_off=True)
+        return False
+    if ok_b:
+        talk_mute.heard(b, muted=ok_b == "silent")
     if ok_b in ("busy", "asleep"):
         _declined(b, a, ok_b)
         return False
     _record({"t": time.time(), "from": b, "to": a, "u": r, "said": UTTERANCES[r]["name"], "kind": "reply",
-             "text": UTTERANCES[r]["text"], "bf": UTTERANCES[r]["bf"], "via": "wifi", "ok": ok_b})
+             "text": UTTERANCES[r]["text"], "bf": UTTERANCES[r]["bf"], "via": "wifi", "ok": bool(ok_b),
+             "silent": ok_b == "silent"})
     said, reply = UTTERANCES[p]["text"], UTTERANCES[r]["text"]
     mission.add(a, f'{a} said "{said}" to {b}' + (f' and {b} answered "{reply}".' if ok_b else f", but {b} didn't answer."),
                 "chat")
@@ -488,7 +510,7 @@ def rps(a, b, urls):
         for n, ans in zip((a, b), answers):
             m = (ans or {}).get("move")
             moves[n] = m if m in MOVES else random.choice(MOVES)
-        with ThreadPoolExecutor(2) as ex:            # both throw at once
+        with ThreadPoolExecutor(2) as ex:            # both throw at once (sound off: quietly)
             list(ex.map(lambda n: _get(f"{urls[n]}/chirp?u={14 + MOVES.index(moves[n])}"), (a, b)))
         for n, other in ((a, b), (b, a)):
             u = 14 + MOVES.index(moves[n])
@@ -659,11 +681,21 @@ def goodbyes(urls, near, now=None):
     return said_bye
 
 
-def start(get_fleet_snapshot, min_gap=25, max_gap=60):
+def start(get_fleet_snapshot, min_gap=25, max_gap=60, board=None):
     """Background thread: a conversation every min_gap-max_gap s, and NORA's IR
-    log merged every 10 s. get_fleet_snapshot() returns RIFT's own roster."""
+    log merged every 10 s. get_fleet_snapshot() returns RIFT's own roster. A second
+    thread keeps the robots' talk switches in step (Fleet/talk_mute.py; board is
+    RIFT's own buzzer)."""
     global _roster_fn
     _roster_fn = get_fleet_snapshot          # _nora() finds her there first
+
+    def _mute_loop():
+        while True:
+            try:
+                talk_mute.sync(talkers(get_fleet_snapshot()), board)
+            except Exception as e:
+                print(f"[RIFT] talk mute error: {e}")
+            time.sleep(5)
 
     def _loop():
         next_chat = time.time() + 10
@@ -671,6 +703,7 @@ def start(get_fleet_snapshot, min_gap=25, max_gap=60):
             try:
                 merge_nora_ir_log()
                 urls = settled(talkers(get_fleet_snapshot()))
+                urls = {n: u for n, u in urls.items() if not talk_mute.chat_off(n)}   # chat off: out of it all
                 maybe_peer_chat(urls)
                 goodbyes(urls, near_map.collect(get_fleet_snapshot()))   # real robots: bye when out of range
                 if time.time() >= next_chat:
@@ -687,6 +720,7 @@ def start(get_fleet_snapshot, min_gap=25, max_gap=60):
                 print(f"[RIFT] conversation error: {e}")
             time.sleep(10)
 
+    threading.Thread(target=_mute_loop, daemon=True, name="talk-mute").start()
     t = threading.Thread(target=_loop, daemon=True, name="fleet-conversations")
     t.start()
     return t

@@ -60,8 +60,9 @@ WEATHER_FIRST = 2 * len(PHRASES) + len(MOVES)        # 17
 SKETCHES = [
     "NORA-Robot-v00/scripts/arduino",
     "NORA-Robot-v00/scripts/esp32",
-    "IDA-Robot-v00/IDA-Robot-v00/scripts/IDA",
-    "MILA/scripts/MILA",
+    "IDA-Robot-v00/scripts/IDA",
+    "MILA-Robot-v00/scripts/MILA",
+    "NIKA-Robot-v00/scripts/NIKA",
     "WHIP-Robot-v00/scripts/esp32_gaits",
     "KIDA-Robot-v01/scripts/arduino/arduino00",
     "DREAM/dream_sensors",
@@ -203,12 +204,18 @@ PLAYER = """
 // Non-blocking: talkStart(u), then call talkStep(pin, voicePct) every loop;
 // each symbol is a tone() of bfToneHz * voicePct / 100. Returns false once
 // it's quiet.
+//
+// talkMuted: her Brainfuck talking is muted (RIFT's Fleet/talk_mute.py, her own
+// /talkmute switch): talkStart and talkPlayBlocking say nothing, and setting it
+// stops whatever she's saying at the next talkStep. The sketch sets it (from its
+// /talkmute, or MUTE:<0|1> on serial) and keeps it across restarts.
+static bool          talkMuted     = false;
 static int8_t        talkUtterance = -1;
 static uint16_t      talkPos       = 0;
 static unsigned long talkNextMs    = 0;
 
 static inline void talkStart(int u) {
-  if (u < 0 || u >= TALK_UTTERANCES) return;
+  if (u < 0 || u >= TALK_UTTERANCES || talkMuted) return;
   talkUtterance = u;
   talkPos       = 0;
   talkNextMs    = 0;
@@ -216,6 +223,7 @@ static inline void talkStart(int u) {
 
 static inline bool talkStep(uint8_t pin, uint8_t voicePct) {
   if (talkUtterance < 0) return false;
+  if (talkMuted) { talkUtterance = -1; noTone(pin); return false; }
   if (millis() < talkNextMs) return true;
   char c = talkSymbol(talkUtterance, talkPos++);
   if (!c) { talkUtterance = -1; noTone(pin); return false; }
@@ -228,7 +236,7 @@ static inline bool talkStep(uint8_t pin, uint8_t voicePct) {
 // Blocking: plays utterance u through the robot's own beep(freq, ms), for
 // sketches whose beep() has to pause something (IRremote shares Timer2).
 static inline void talkPlayBlocking(int u, uint8_t voicePct, void (*beep)(unsigned int, unsigned int)) {
-  if (u < 0 || u >= TALK_UTTERANCES) return;
+  if (u < 0 || u >= TALK_UTTERANCES || talkMuted) return;
   for (uint16_t n = 0;; n++) {
     char c = talkSymbol(u, n);
     if (!c) break;

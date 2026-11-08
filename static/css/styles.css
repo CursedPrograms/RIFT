@@ -56,6 +56,14 @@ body {
 .line .says { color: var(--text); }
 .line.failed { opacity: 0.5; }
 .line .via { float: right; font-size: 0.65rem; color: var(--text-dim); }
+/* talk mute switches (Fleet/talk_mute.py): a muted robot's chip is struck through */
+.talk-mute { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+.talk-mute .hint { margin: 0; }
+.talk-mute .moods { margin: 0; }
+.talk-mute button { font-size: 0.72rem; padding: 3px 10px; background: transparent; color: var(--accent);
+                    border: 1px solid var(--accent); border-radius: 12px; cursor: pointer; }
+.talk-mute button.muted { color: var(--text-dim); border-color: var(--border); text-decoration: line-through; }
+.talk-mute button.pending { opacity: 0.6; }
 #talkNow { float: right; font-size: 0.7rem; padding: 2px 10px; background: transparent; color: var(--accent);
            border: 1px solid var(--accent); border-radius: 4px; cursor: pointer; }
 

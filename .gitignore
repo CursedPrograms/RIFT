@@ -66,3 +66,5 @@ memory_pending_*.jsonl
 
 # this PC's network devices for the fleet (Fleet/fleet_net.py)
 network.json
+talk_mute.json
+talk_mute.json.tmp

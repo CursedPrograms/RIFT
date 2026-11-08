@@ -18,7 +18,7 @@ from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser
 
 from Fleet.register import start_fleet_authority
 from Fleet.internet_share import start_internet_share
-from Fleet import conversations, locks, mission, music, relay
+from Fleet import conversations, locks, mission, music, relay, talk_mute
 from Fleet.rift_board import RiftBoard
 from Fleet.bt_autopair import start_autopair
 from Fleet import near_map
@@ -170,6 +170,32 @@ def talk_log():
     return jsonify(conversations.snapshot())
 
 
+# GET /talk/mute                                    every robot's two talk switches (Fleet/talk_mute.py)
+# POST /talk/mute {"name": "NORA", "muted": true}     her sound: she chats, but isn't beeped ("RIFT": its buzzer)
+# POST /talk/mute {"name": "NORA", "chat_off": true}  her chat: she's out of the conversations
+# POST /talk/mute {"all": "muted", "on": true}        a switch for the whole fleet (newcomers too)
+@app.route("/talk/mute")
+def talk_mute_view():
+    return jsonify(talk_mute.snapshot(conversations.talkers(_fleet_snapshot())))
+
+
+@app.route("/talk/mute", methods=["POST"])
+def talk_mute_set():
+    data = request.get_json(silent=True) or {}
+    name = str(data.get("name", "")).strip()[:24]
+    if data.get("all") in talk_mute.SWITCHES and "on" in data:
+        talk_mute.set_all(data["all"], bool(data["on"]))
+    elif name and any(s in data for s in talk_mute.SWITCHES):
+        for s in talk_mute.SWITCHES:
+            if s in data:
+                talk_mute.set_switch(name, s, bool(data[s]))
+    else:
+        return jsonify({"ok": False, "error": 'send {"name": ..., "muted" and/or "chat_off": true|false}, '
+                                              'or {"all": "muted"|"chat_off", "on": true|false}'}), 400
+    board.set_muted(talk_mute.muted("RIFT"))
+    return jsonify(dict(talk_mute.snapshot(conversations.talkers(_fleet_snapshot())), ok=True))
+
+
 # ── Music together (Fleet/music.py) ─────────────────────────────────────────
 # GET /clock     RIFT's time: players set their clocks by it
 # GET /music     who can play, and the last command
@@ -256,6 +282,7 @@ def talk_now():
     if verb != "say":
         return jsonify({"error": "verb is say, ask or do"}), 400
     urls = conversations.talkers(_fleet_snapshot())
+    urls = {n: u for n, u in urls.items() if not talk_mute.chat_off(n)}   # chat off: out of the conversations
     a, b = data.get("from"), data.get("to")
     names = list(urls)
     if data.get("peer"):   # two robots with minds: rock paper scissors, then words or Brainfuck
@@ -635,7 +662,7 @@ if __name__ == "__main__":
         print(f"[RIFT] RIFT is the hub: the fleet registry at {MY_IP}:{THIS_PORT} "
               f"(the robots expect 192.168.4.1; set RIFT_NORA_HUB=1 if NORA hosts the network)")
 
-    conversations.start(_fleet_snapshot)
+    conversations.start(_fleet_snapshot, board=board)
     board.start()   # looks for its own Arduino after 25 s, on ports nobody else has open
     start_autopair()   # pairs with NORA (and any fleet robot) over Bluetooth; skips if there's no radio
     rift_near.start()  # who's near RIFT over Bluetooth LE (needs bleak; beacons too on a Pi)

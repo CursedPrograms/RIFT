@@ -101,7 +101,7 @@ function refreshTalk() {
                 <div class="line${e.ok ? '' : ' failed'}">
                     <span class="via">${e.via === 'ir' ? 'IR' : 'WiFi'} · ${new Date(e.t * 1000).toLocaleTimeString()}</span>
                     <span class="who">${esc(e.from)} &rarr; ${esc(e.to)}</span>
-                    <span class="says">&ldquo;${esc(e.text)}&rdquo;</span>${e.ok ? '' : ' (no answer)'}
+                    <span class="says">&ldquo;${esc(e.text)}&rdquo;</span>${e.ok ? '' : ' (no answer)'}${e.silent ? ' <span class="via">(silent)</span>' : ''}
                     <span class="bf">${esc(e.bf)}</span>
                 </div>`).join('') : '<p class="empty">No conversations yet.</p>';
             moodsEl.innerHTML = Object.entries(data.moods || {})
@@ -115,6 +115,56 @@ document.getElementById('talkNow').addEventListener('click', () => {
         .then(() => setTimeout(refreshTalk, 500))
         .catch(() => {});
 });
+
+// ── Talk switches (GET/POST /talk/mute, Fleet/talk_mute.py) ──────────────
+// Two rows of chips, one per robot. Sound: she chats but isn't heard. Chat: she's out of the
+// conversations. Click a chip to flip it; the "all" buttons cover newcomers too.
+const talkRows = { muted: document.getElementById('talkMutes'), chat_off: document.getElementById('talkChats') };
+const talkAllBtns = document.querySelectorAll('.talk-mute button[data-all]');
+const TALK_WORDS = {
+    muted:    { all: ['Mute all', 'Unmute all'], on: 'Sound off: click to let her be heard', off: 'Heard: click to mute her' },
+    chat_off: { all: ['All out', 'All in'], on: 'Out of the chat: click to let her join in', off: 'Chatting: click to leave her out' },
+};
+let talkAll = { muted: false, chat_off: false };
+
+function renderTalkMute(d) {
+    talkAll = d.all || talkAll;
+    talkAllBtns.forEach(b => {
+        const s = b.dataset.all;
+        b.textContent = TALK_WORDS[s].all[talkAll[s] ? 1 : 0];
+        b.classList.toggle('muted', !!talkAll[s]);
+    });
+    for (const [s, row] of Object.entries(talkRows)) {
+        row.innerHTML = Object.entries(d.robots || {})
+            .filter(([n]) => s === 'muted' || n !== 'RIFT')            // RIFT has a buzzer, not a chat
+            .map(([n, r]) => {
+                const cls = [r[s] ? 'muted' : '', r.pending ? 'pending' : ''].join(' ').trim();
+                const tip = (r[s] ? TALK_WORDS[s].on : TALK_WORDS[s].off) + (r.pending ? ' (on its way to her)' : '') +
+                    (r.own_switch ? '' : ' (older firmware: RIFT just leaves her out)');
+                return `<button class="${cls}" data-switch="${s}" data-name="${esc(n)}" data-on="${r[s] ? 1 : 0}" title="${esc(tip)}">${esc(n)}</button>`;
+            }).join('');
+    }
+}
+
+function refreshTalkMute() {
+    fetch('/talk/mute')
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(renderTalkMute)
+        .catch(() => {});
+}
+
+function postTalkMute(body) {
+    fetch('/talk/mute', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        .then(r => r.json())
+        .then(renderTalkMute)
+        .catch(() => {});
+}
+
+talkAllBtns.forEach(b => b.addEventListener('click', () => postTalkMute({ all: b.dataset.all, on: !talkAll[b.dataset.all] })));
+Object.values(talkRows).forEach(row => row.addEventListener('click', e => {
+    const b = e.target.closest('button[data-switch]');
+    if (b) postTalkMute({ name: b.dataset.name, [b.dataset.switch]: b.dataset.on !== '1' });
+}));
 
 // ── Mission log ─────────────────────────────────────────────────────────
 const missionEl = document.getElementById('mission');
@@ -171,6 +221,7 @@ function refreshAll() {
     refreshRobots();
     refreshPeers();
     refreshTalk();
+    refreshTalkMute();
     refreshMission();
     refreshNear();
 }
